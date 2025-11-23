@@ -4,16 +4,57 @@ import { TrendingUp, Target, Award, Copy, Check } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo, copyToClipboard } from '../utils/helpers';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
+  const { demoMode, user } = useAuth();
   const [stats, setStats] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copiedTask, setCopiedTask] = useState(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (demoMode) {
+      // Load demo data
+      setStats({
+        referralCount: user.referralCount,
+        creditPoints: user.creditPoints,
+        activeTasks: 3
+      });
+      setTasks([
+        {
+          id: 1,
+          title: 'Share Math Course',
+          description: 'Share our premium Math course with your network',
+          productLink: 'https://stucare.com/math-course',
+          messageTemplate: 'Check out this amazing Math course! Use my code: {{CODE}}',
+          pointsReward: 20,
+          isActive: true
+        },
+        {
+          id: 2,
+          title: 'Promote Science Bootcamp',
+          description: 'Spread the word about our Science bootcamp',
+          productLink: 'https://stucare.com/science-bootcamp',
+          messageTemplate: 'Join the Science bootcamp with my referral code: {{CODE}}',
+          pointsReward: 30,
+          isActive: true
+        },
+        {
+          id: 3,
+          title: 'English Learning Program',
+          description: 'Help students improve their English skills',
+          productLink: 'https://stucare.com/english-program',
+          messageTemplate: 'Improve your English with this program! Code: {{CODE}}',
+          pointsReward: 25,
+          isActive: true
+        }
+      ]);
+      setLoading(false);
+    } else {
+      fetchData();
+    }
+  }, [demoMode]);
 
   const fetchData = async () => {
     try {

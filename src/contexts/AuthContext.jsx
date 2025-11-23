@@ -15,12 +15,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const type = localStorage.getItem('userType');
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
     
-    if (token && type) {
+    if (isDemoMode) {
+      // Load demo user
+      setDemoMode(true);
+      setUserType('ambassador');
+      setUser({
+        id: 1,
+        name: 'Demo Ambassador',
+        email: 'demo@student.edu',
+        collegeName: 'Demo University',
+        phoneNumber: '+91 98765 43210',
+        age: 22,
+        uniqueCode: 'STU12345678',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Demo',
+        referralCount: 15,
+        creditPoints: 150,
+        level: 'Hustler',
+        isActive: true
+      });
+      setLoading(false);
+    } else if (token && type) {
       setUserType(type);
       fetchUserProfile(type);
     } else {
@@ -41,6 +62,29 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password, isAdmin = false) => {
+    // Check for demo login
+    if (email === 'demo@student.edu' && password === 'demo123') {
+      localStorage.setItem('demoMode', 'true');
+      localStorage.setItem('userType', 'ambassador');
+      setDemoMode(true);
+      setUserType('ambassador');
+      setUser({
+        id: 1,
+        name: 'Demo Ambassador',
+        email: 'demo@student.edu',
+        collegeName: 'Demo University',
+        phoneNumber: '+91 98765 43210',
+        age: 22,
+        uniqueCode: 'STU12345678',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Demo',
+        referralCount: 15,
+        creditPoints: 150,
+        level: 'Hustler',
+        isActive: true
+      });
+      return { success: true };
+    }
+
     try {
       const endpoint = isAdmin ? '/auth/admin/login' : '/auth/login';
       const response = await api.post(endpoint, { email, password });
@@ -87,8 +131,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userType');
+    localStorage.removeItem('demoMode');
     setUser(null);
     setUserType(null);
+    setDemoMode(false);
   };
 
   const value = {
@@ -100,6 +146,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAuthenticated: !!user,
     isAdmin: userType === 'admin',
+    demoMode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

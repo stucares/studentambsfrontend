@@ -3,15 +3,27 @@ import { motion } from 'framer-motion';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo } from '../utils/helpers';
+import { useAuth } from '../contexts/AuthContext';
 
 const Account = () => {
+  const { demoMode, user: authUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (demoMode) {
+      // Load demo data
+      setProfile(authUser);
+      setStats({
+        referralCount: authUser.referralCount,
+        creditPoints: authUser.creditPoints
+      });
+      setLoading(false);
+    } else {
+      fetchProfile();
+    }
+  }, [demoMode]);
 
   const fetchProfile = async () => {
     try {

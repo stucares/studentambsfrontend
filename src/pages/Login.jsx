@@ -61,6 +61,27 @@ const Login = () => {
           </p>
         </div>
 
+        {/* Demo Login Banner */}
+        {!isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-gradient-to-r from-blue-500/20 to-orange-500/20 border border-blue-500/30 rounded-lg"
+          >
+            <div className="flex items-start gap-3">
+              <div className="text-2xl">🎯</div>
+              <div className="flex-1">
+                <p className="font-bold text-white mb-1">Try Demo Mode</p>
+                <p className="text-sm text-gray-300 mb-2">Test the platform without backend setup</p>
+                <div className="bg-white/10 p-2 rounded text-xs font-mono">
+                  <p className="text-gray-200">Email: <span className="text-blue-400">demo@student.edu</span></p>
+                  <p className="text-gray-200">Password: <span className="text-blue-400">demo123</span></p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setIsAdmin(false)}
