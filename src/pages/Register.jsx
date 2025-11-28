@@ -29,8 +29,8 @@ const Register = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.email.includes('.edu')) {
-      toast.error('Please use your educational email address (.edu)');
+    if (formData.phoneNumber.length !== 10 || !/^\d{10}$/.test(formData.phoneNumber)) {
+      toast.error('Phone number must be exactly 10 digits');
       return;
     }
 
@@ -73,8 +73,25 @@ const Register = () => {
         className="glass-card p-8 max-w-2xl w-full"
       >
         <div className="text-center mb-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="mb-4 flex items-center justify-center gap-3"
+          >
+            <img 
+              src="/StuCare's TM.png" 
+              alt="Stucare" 
+              className="h-10 w-auto"
+            />
+            <span className="text-2xl font-bold text-gray-400">×</span>
+            <img 
+              src="/scholare-logo.svg" 
+              alt="Scholare" 
+              className="h-10 w-auto"
+            />
+          </motion.div>
           <h1 className="text-4xl font-bold gradient-text mb-2">Join Stucare</h1>
-          <p className="text-gray-300">Become a Student Ambassador</p>
+          <p className="text-gray-600">Become a Student Ambassador</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,7 +102,7 @@ const Register = () => {
           
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
@@ -101,7 +118,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Age</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Age</label>
               <div className="relative">
                 <Hash className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
@@ -120,7 +137,7 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Educational Email</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
@@ -129,15 +146,14 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className="input-field pl-10"
-                placeholder="you@university.edu"
+                placeholder="you@example.com"
                 required
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">Must be a .edu email address</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">College Name</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">College Name</label>
             <div className="relative">
               <GraduationCap className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
@@ -153,7 +169,7 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Phone Number</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Phone Number (10 digits)</label>
             <div className="relative">
               <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
@@ -162,15 +178,18 @@ const Register = () => {
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 className="input-field pl-10"
-                placeholder="+1 234 567 8900"
+                placeholder="1234567890"
                 required
+                pattern="\d{10}"
+                maxLength="10"
               />
             </div>
+            <p className="text-xs text-gray-500 mt-1">Must be exactly 10 digits</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
@@ -187,7 +206,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Confirm Password</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Confirm Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
@@ -209,14 +228,14 @@ const Register = () => {
             disabled={loading}
             className="btn-primary w-full"
           >
-            {loading ? 'Creating Account...' : 'Join Now 🚀'}
+            {loading ? 'Creating Account...' : 'Join Now'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-300">
+          <p className="text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary-400 hover:text-primary-300 font-semibold">
+            <Link to="/login" className="text-primary-500 hover:text-primary-600 font-semibold">
               Login here
             </Link>
           </p>

@@ -16,18 +16,23 @@ const Dashboard = () => {
   useEffect(() => {
     if (demoMode) {
       // Load demo data
+      const ambassadorCode = user.uniqueCode;
       setStats({
         referralCount: user.referralCount,
         creditPoints: user.creditPoints,
-        activeTasks: 3
+        activeTasks: 3,
+        uniqueCode: ambassadorCode
       });
+      
+      // Replace {{CODE}} placeholder with actual ambassador code
       setTasks([
         {
           id: 1,
           title: 'Share Math Course',
           description: 'Share our premium Math course with your network',
           productLink: 'https://stucare.com/math-course',
-          messageTemplate: 'Check out this amazing Math course! Use my code: {{CODE}}',
+          productThumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
+          messageTemplate: `Check out this amazing Math course! Use my code: ${ambassadorCode}`,
           pointsReward: 20,
           isActive: true
         },
@@ -36,7 +41,8 @@ const Dashboard = () => {
           title: 'Promote Science Bootcamp',
           description: 'Spread the word about our Science bootcamp',
           productLink: 'https://stucare.com/science-bootcamp',
-          messageTemplate: 'Join the Science bootcamp with my referral code: {{CODE}}',
+          productThumbnail: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400',
+          messageTemplate: `Join the Science bootcamp with my referral code: ${ambassadorCode}`,
           pointsReward: 30,
           isActive: true
         },
@@ -45,7 +51,8 @@ const Dashboard = () => {
           title: 'English Learning Program',
           description: 'Help students improve their English skills',
           productLink: 'https://stucare.com/english-program',
-          messageTemplate: 'Improve your English with this program! Code: {{CODE}}',
+          productThumbnail: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400',
+          messageTemplate: `Improve your English with this program! Code: ${ambassadorCode}`,
           pointsReward: 25,
           isActive: true
         }
@@ -58,12 +65,21 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [statsRes, tasksRes] = await Promise.all([
+      const [statsRes, tasksRes, profileRes] = await Promise.all([
         api.get('/ambassador/stats'),
         api.get('/ambassador/tasks'),
+        api.get('/ambassador/profile'),
       ]);
-      setStats(statsRes.data.stats);
-      setTasks(tasksRes.data.tasks);
+      const ambassadorCode = profileRes.data.ambassador.uniqueCode;
+      setStats({...statsRes.data.stats, uniqueCode: ambassadorCode});
+      
+      // Replace {{CODE}} placeholder in all task messages
+      const tasksWithCode = tasksRes.data.tasks.map(task => ({
+        ...task,
+        messageTemplate: task.messageTemplate.replace(/\{\{CODE\}\}/gi, ambassadorCode)
+      }));
+      
+      setTasks(tasksWithCode);
       setLoading(false);
     } catch (error) {
       toast.error('Failed to load dashboard data');
@@ -71,11 +87,19 @@ const Dashboard = () => {
     }
   };
 
-  const handleCopyMessage = async (taskId, message) => {
-    const success = await copyToClipboard(message);
+  const handleCopyMessage = async (task) => {
+    // Create rich formatted message with thumbnail and link
+    const richMessage = `${task.messageTemplate}
+
+🔗 Product Link: ${task.productLink}
+${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
+
+✨ Shared by a Stucare Ambassador`;
+
+    const success = await copyToClipboard(richMessage);
     if (success) {
-      setCopiedTask(taskId);
-      toast.success('Message copied! Share it now! 🚀');
+      setCopiedTask(task.id);
+      toast.success('Message copied with product details! 🚀');
       setTimeout(() => setCopiedTask(null), 2000);
     } else {
       toast.error('Failed to copy message');
@@ -86,6 +110,19 @@ const Dashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-400">Failed to load dashboard data</p>
+          <button onClick={() => window.location.reload()} className="btn-primary mt-4">
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -238,16 +275,31 @@ const Dashboard = () => {
                     </span>
                   )}
                 </div>
+
+                {/* Product Thumbnail */}
+                {task.productThumbnail && (
+                  <div className="mb-4 rounded-lg overflow-hidden">
+                    <img 
+                      src={task.productThumbnail} 
+                      alt={task.title}
+                      className="w-full h-40 object-cover"
+                    />
+                  </div>
+                )}
+
                 <p className="text-gray-300 mb-4">{task.description}</p>
                 
                 <div className="bg-white/5 rounded-lg p-3 mb-4">
                   <p className="text-sm text-gray-400 mb-1">Share this message:</p>
-                  <p className="text-sm font-mono">{task.messageTemplate}</p>
+                  <p className="text-sm font-mono whitespace-pre-wrap">{task.messageTemplate}</p>
+                  <div className="mt-2 pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-500">+ Product link and thumbnail will be included</p>
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleCopyMessage(task.id, task.messageTemplate)}
+                    onClick={() => handleCopyMessage(task)}
                     className="flex-1 btn-primary flex items-center justify-center gap-2"
                   >
                     {copiedTask === task.id ? (

@@ -301,6 +301,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
     title: '',
     description: '',
     productLink: '',
+    productThumbnail: '',
     messageTemplate: '',
     pointsReward: 0,
   });
@@ -359,6 +360,27 @@ const TaskModal = ({ onClose, onSuccess }) => {
           </div>
           
           <div>
+            <label className="block text-sm font-medium mb-2">Product Thumbnail URL (optional)</label>
+            <input
+              type="url"
+              value={formData.productThumbnail}
+              onChange={(e) => setFormData({ ...formData, productThumbnail: e.target.value })}
+              className="input-field"
+              placeholder="https://example.com/image.jpg"
+            />
+            {formData.productThumbnail && (
+              <div className="mt-2">
+                <img 
+                  src={formData.productThumbnail} 
+                  alt="Preview" 
+                  className="w-full h-32 object-cover rounded-lg"
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              </div>
+            )}
+          </div>
+          
+          <div>
             <label className="block text-sm font-medium mb-2">
               Message Template (use {`{{CODE}}`} for unique code)
             </label>
@@ -370,6 +392,9 @@ const TaskModal = ({ onClose, onSuccess }) => {
               placeholder="Check out this amazing product! Use my code {{CODE}} for special offers."
               required
             />
+            <p className="text-xs text-gray-400 mt-1">
+              💡 The product link and thumbnail will be automatically included when copied
+            </p>
           </div>
           
           <div>

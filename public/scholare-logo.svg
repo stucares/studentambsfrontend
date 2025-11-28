@@ -1,0 +1,7 @@
+<svg width="200" height="50" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+  <!-- Scholare text in blue with TM -->
+  <text x="10" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#2563eb">Scholare</text>
+  <text x="165" y="20" font-family="Arial, sans-serif" font-size="12" fill="#2563eb">TM</text>
+  <!-- Yellow smile curve -->
+  <path d="M 50 42 Q 100 48 150 42" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>
