@@ -198,10 +198,10 @@ const LandingPage = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Powered by Industry Leaders
+              Powered by Innovation in Education
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              A collaboration between Stucare and Scholare to empower students
+              A collaboration between Stucare and Scholare to empower and develop students holistically
             </p>
           </motion.div>
 
@@ -221,25 +221,28 @@ const LandingPage = () => {
                 />
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">Stucare</h3>
-                  <p className="text-gray-500">Student Care Solutions</p>
+                  <p className="text-gray-500">Empowering India's Youth</p>
                 </div>
               </div>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Stucare is India's leading student-focused platform offering a wide range of 
-                products and services designed specifically for students. From study materials 
-                to lifestyle products, Stucare ensures every student gets access to quality 
-                products at affordable prices.
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                Stucare is an Indian student-focused education and development initiative designed to help students grow beyond textbooks and traditional classroom learning. It focuses on building students holistically by nurturing not only academic excellence but also mental well-being, financial awareness, and essential life skills.
+              </p>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                We develop emotionally strong students by promoting mental health awareness, stress management, and self-confidence. We emphasize financial literacy by teaching money management, savings, budgeting, and investments from an early age. Through interactive workshops, quizzes, awareness programs, and digital platforms, Stucare creates engaging, practical, and impactful learning experiences.
+              </p>
+              <p className="text-gray-600 mb-6 leading-relaxed font-medium text-primary-700">
+                Our mission: Shape students into responsible, skilled, and future-ready individuals who succeed in both personal and professional lives.
               </p>
               <div className="flex flex-wrap gap-2">
-                {['Student Products', 'Affordable Prices', 'Quality Assured', 'Pan India Delivery'].map((tag) => (
-                  <span key={tag} className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm">
+                {['Mental Wellness', 'Financial Literacy', 'Life Skills', 'Leadership', 'Communication', 'Real-World Ready'].map((tag) => (
+                  <span key={tag} className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm font-medium">
                     {tag}
                   </span>
                 ))}
               </div>
             </motion.div>
 
-            {/* Scholare Card */}
+            {/* StuQuiz Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -248,24 +251,26 @@ const LandingPage = () => {
               className="glass-card p-8"
             >
               <div className="flex items-center gap-4 mb-6">
-                <img 
-                  src="3048_Scholare_HK-JPG-01__1_-removebg-preview.png" 
-                  alt="Scholare" 
-                  className="h-14 object-contain"
-                />
+                <div className="w-14 h-14 bg-gradient-to-br from-lime-400 to-lime-600 rounded-2xl flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-white" />
+                </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Scholare</h3>
-                  <p className="text-gray-500">Education Excellence</p>
+                  <h3 className="text-2xl font-bold text-gray-900">StuQuiz</h3>
+                  <p className="text-gray-500">Learn Through Play</p>
                 </div>
               </div>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Scholare is dedicated to enhancing the academic journey of students across India. 
-                With a focus on educational resources, scholarship guidance, and career development, 
-                Scholare helps students achieve their academic and professional goals.
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                StuQuiz is an interactive quiz-based learning platform by StuCare that transforms traditional education into an exciting game-like experience. We make learning engaging, fun, and rewarding by helping students test their knowledge while enjoying the process.
+              </p>
+              <p className="text-gray-600 mb-4 leading-relaxed">
+                Our platform focuses on improving general knowledge, academic understanding, logical thinking, and problem-solving skills through live and scheduled quizzes. Students receive instant feedback and explanations, helping them learn faster. We motivate participation with win prizes, leaderboard rankings, and reward systems.
+              </p>
+              <p className="text-gray-600 mb-6 leading-relaxed font-medium text-lime-700">
+                Core mission: Make learning enjoyable, competitive, and meaningful while building confidence, speed, and smart decision-making abilities.
               </p>
               <div className="flex flex-wrap gap-2">
-                {['Education Resources', 'Scholarship Guide', 'Career Support', 'Student Community'].map((tag) => (
-                  <span key={tag} className="bg-lime-50 text-lime-700 px-3 py-1 rounded-full text-sm">
+                {['Live Quizzes', 'Win Prizes', 'Instant Feedback', 'Leaderboards', 'General Knowledge', 'Problem Solving'].map((tag) => (
+                  <span key={tag} className="bg-lime-50 text-lime-700 px-3 py-1 rounded-full text-sm font-medium">
                     {tag}
                   </span>
                 ))}

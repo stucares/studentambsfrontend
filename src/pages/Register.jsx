@@ -50,7 +50,7 @@ const Register = () => {
       setLoadingUniversities(true);
       try {
         const response = await axios.get(
-          `http://universities.hipolabs.com/search?name=${encodeURIComponent(formData.collegeName)}`
+          `https://universities.hipolabs.com/search?name=${encodeURIComponent(formData.collegeName)}`
         );
         
         // Filter and limit results
