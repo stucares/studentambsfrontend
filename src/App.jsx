@@ -6,11 +6,20 @@ import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 
 // Pages
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
+import Earnings from './pages/Earnings';
+import PremiumUpgrade from './pages/PremiumUpgrade';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import MeetingScheduled from './pages/MeetingScheduled';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminWithdrawals from './pages/AdminWithdrawals';
+import AdminPremiumMembers from './pages/AdminPremiumMembers';
+import AdminPremiumSettings from './pages/AdminPremiumSettings';
 
 function App() {
   return (
@@ -48,8 +57,43 @@ function App() {
         
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Premium/Payment Routes */}
+          <Route
+            path="/premium-upgrade"
+            element={
+              <PrivateRoute>
+                <PremiumUpgrade />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/payment-success"
+            element={
+              <PrivateRoute>
+                <PaymentSuccess />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/payment-failed"
+            element={
+              <PrivateRoute>
+                <PaymentFailed />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/meeting-scheduled"
+            element={
+              <PrivateRoute>
+                <MeetingScheduled />
+              </PrivateRoute>
+            }
+          />
           
           {/* Ambassador Routes */}
           <Route
@@ -72,6 +116,16 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/earnings"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <Earnings />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
           
           {/* Admin Routes */}
           <Route
@@ -84,10 +138,39 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/admin/withdrawals"
+            element={
+              <PrivateRoute adminOnly>
+                <Layout>
+                  <AdminWithdrawals />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/premium-members"
+            element={
+              <PrivateRoute adminOnly>
+                <Layout>
+                  <AdminPremiumMembers />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/premium-settings"
+            element={
+              <PrivateRoute adminOnly>
+                <Layout>
+                  <AdminPremiumSettings />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
           
           {/* Default Route */}
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </AuthProvider>

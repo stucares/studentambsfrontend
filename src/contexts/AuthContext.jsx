@@ -22,8 +22,11 @@ export const AuthProvider = ({ children }) => {
     const type = localStorage.getItem('userType');
     const isDemoMode = localStorage.getItem('demoMode') === 'true';
     
+    console.log('AuthContext initializing...', { token: token?.substring(0, 20), type, isDemoMode });
+    
     if (isDemoMode) {
       // Load demo user
+      console.log('Loading demo user...');
       setDemoMode(true);
       setUserType('ambassador');
       setUser({
@@ -42,9 +45,11 @@ export const AuthProvider = ({ children }) => {
       });
       setLoading(false);
     } else if (token && type) {
+      console.log('Token and type found, fetching profile...');
       setUserType(type);
       fetchUserProfile(type);
     } else {
+      console.log('No token or type found, setting loading to false');
       setLoading(false);
     }
   }, []);
@@ -52,12 +57,26 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async (type) => {
     try {
       const endpoint = type === 'admin' ? '/admin/dashboard/stats' : '/ambassador/profile';
+      console.log('Fetching profile from:', endpoint);
+      
       const response = await api.get(endpoint);
-      setUser(type === 'admin' ? { type: 'admin' } : response.data.ambassador);
+      console.log('Profile response:', response.data);
+      
+      if (type === 'admin') {
+        setUser({ type: 'admin', ...response.data });
+      } else {
+        setUser(response.data.ambassador);
+      }
+      console.log('User set successfully:', response.data);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      logout();
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      // Don't logout on profile fetch failure, just stop loading
+      // The user is still authenticated with a valid token
+      setLoading(false);
     }
   };
 
@@ -87,19 +106,28 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const endpoint = isAdmin ? '/auth/admin/login' : '/auth/login';
+      console.log('Login attempt:', { endpoint, email, isAdmin });
+      
       const response = await api.post(endpoint, { email, password });
+      console.log('Login response:', response.data);
       
       const { token } = response.data;
+      const userData = response.data.ambassador || response.data.admin;
       const type = isAdmin ? 'admin' : 'ambassador';
+      
+      console.log('Storing token and user type:', { token: token.substring(0, 20) + '...', type });
       
       localStorage.setItem('token', token);
       localStorage.setItem('userType', type);
       
       setUserType(type);
-      setUser(isAdmin ? { type: 'admin' } : response.data.ambassador);
+      setUser(userData);
+      
+      console.log('Login successful, user set:', userData);
       
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       return { 
         success: false, 
         message: error.response?.data?.message || 'Login failed' 
@@ -137,6 +165,13 @@ export const AuthProvider = ({ children }) => {
     setDemoMode(false);
   };
 
+  const refreshUser = async () => {
+    const type = localStorage.getItem('userType');
+    if (type && !demoMode) {
+      await fetchUserProfile(type);
+    }
+  };
+
   const value = {
     user,
     userType,
@@ -144,6 +179,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     isAdmin: userType === 'admin',
     demoMode,

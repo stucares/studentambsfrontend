@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, User, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, User, LogOut, Menu, X, Wallet, Crown, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout = ({ children }) => {
@@ -17,11 +17,15 @@ const Layout = ({ children }) => {
 
   const ambassadorLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/earnings', label: 'Earnings', icon: Wallet },
     { path: '/account', label: 'Account', icon: User },
   ];
 
   const adminLinks = [
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/admin/premium-members', label: 'Premium Members', icon: Crown },
+    { path: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
+    { path: '/admin/premium-settings', label: 'Settings', icon: Settings },
   ];
 
   const links = isAdmin ? adminLinks : ambassadorLinks;
@@ -33,14 +37,18 @@ const Layout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to={isAdmin ? '/admin' : '/dashboard'} className="flex items-center gap-2">
-              <div className="bg-white/95 px-3 py-2 rounded-lg shadow-md">
-                <img 
-                  src="/StuCare's TM.png" 
-                  alt="Stucare" 
-                  className="h-8 w-auto"
-                />
-              </div>
+            <Link to={isAdmin ? '/admin' : '/dashboard'} className="flex items-center gap-3">
+              <img 
+                src="/StuCare's TM.png" 
+                alt="Stucare" 
+                className="h-8 w-auto"
+              />
+              <span className="text-xl font-bold text-gray-400">×</span>
+              <img 
+                src="/3048_Scholare_HK-JPG-01__1_-removebg-preview.png" 
+                alt="Scholare" 
+                className="h-8 w-auto"
+              />
             </Link>
 
             {/* Desktop Navigation */}

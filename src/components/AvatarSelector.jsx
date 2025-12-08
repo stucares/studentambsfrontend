@@ -3,18 +3,18 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 const avatarOptions = [
-  { id: 1, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', name: 'Felix' },
-  { id: 2, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka', name: 'Aneka' },
-  { id: 3, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Midnight', name: 'Midnight' },
-  { id: 4, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Buddy', name: 'Buddy' },
-  { id: 5, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna', name: 'Luna' },
-  { id: 6, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Max', name: 'Max' },
-  { id: 7, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rocky', name: 'Rocky' },
-  { id: 8, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie', name: 'Charlie' },
-  { id: 9, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella', name: 'Bella' },
-  { id: 10, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo', name: 'Milo' },
-  { id: 11, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daisy', name: 'Daisy' },
-  { id: 12, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Cooper', name: 'Cooper' },
+  { id: 1, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4' },
+  { id: 2, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sam&backgroundColor=c0aede' },
+  { id: 3, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan&backgroundColor=ffd5dc' },
+  { id: 4, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Taylor&backgroundColor=d1f4e0' },
+  { id: 5, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan&backgroundColor=ffe8cc' },
+  { id: 6, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey&backgroundColor=ffeaa7' },
+  { id: 7, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riley&backgroundColor=fab1a0' },
+  { id: 8, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jamie&backgroundColor=74b9ff' },
+  { id: 9, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dakota&backgroundColor=a29bfe' },
+  { id: 10, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Avery&backgroundColor=fd79a8' },
+  { id: 11, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Parker&backgroundColor=81ecec' },
+  { id: 12, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Quinn&backgroundColor=55efc4' },
 ];
 
 const AvatarSelector = ({ selectedAvatar, onSelect }) => {
@@ -38,9 +38,7 @@ const AvatarSelector = ({ selectedAvatar, onSelect }) => {
             />
           </div>
           <div>
-            <p className="font-semibold">
-              {avatarOptions.find(a => a.url === selectedAvatar)?.name || 'Select Avatar'}
-            </p>
+            <p className="font-semibold">Selected Avatar</p>
             <p className="text-sm text-gray-400">Click to change</p>
           </div>
         </div>
@@ -71,7 +69,7 @@ const AvatarSelector = ({ selectedAvatar, onSelect }) => {
               >
                 <img 
                   src={avatar.url} 
-                  alt={avatar.name}
+                  alt={`Avatar ${avatar.id}`}
                   className="w-full h-full rounded-full bg-white"
                 />
                 {selectedAvatar === avatar.url && (

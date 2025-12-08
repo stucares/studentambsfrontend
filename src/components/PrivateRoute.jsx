@@ -3,7 +3,9 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, userType } = useAuth();
+
+  console.log('PrivateRoute check:', { isAuthenticated, isAdmin, loading, userType, adminOnly });
 
   if (loading) {
     return (
@@ -13,16 +15,25 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+  // Check if user has token and userType in localStorage as fallback
+  const hasToken = localStorage.getItem('token');
+  const storedUserType = localStorage.getItem('userType');
+  
+  console.log('Token check:', { hasToken: !!hasToken, storedUserType });
+
+  if (!isAuthenticated && !hasToken) {
+    console.log('Not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && !isAdmin) {
-    return <Navigate to="/dashboard" />;
+  if (adminOnly && storedUserType !== 'admin') {
+    console.log('Admin route but not admin, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
   }
 
-  if (!adminOnly && isAdmin) {
-    return <Navigate to="/admin" />;
+  if (!adminOnly && storedUserType === 'admin') {
+    console.log('Ambassador route but user is admin, redirecting to admin');
+    return <Navigate to="/admin" replace />;
   }
 
   return children;

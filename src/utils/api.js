@@ -27,10 +27,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userType');
-      window.location.href = '/login';
+    // Don't redirect on 401 for login/register endpoints - those are expected failures
+    const isAuthEndpoint = error.config?.url?.includes('/auth/');
+    
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Only clear token and redirect if we're not on an auth endpoint
+      // and the user was previously authenticated
+      const token = localStorage.getItem('token');
+      if (token) {
+        console.log('401 error on authenticated request, clearing token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('userType');
+        localStorage.removeItem('demoMode');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

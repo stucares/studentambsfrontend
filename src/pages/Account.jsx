@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
+import { BadgeCheck, Star, Crown, Sparkles, ArrowRight } from 'lucide-react';
 
 const Account = () => {
+  const navigate = useNavigate();
   const { demoMode, user: authUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
@@ -107,11 +110,18 @@ const Account = () => {
 
                 {/* Name and Role */}
                 <div className="text-center mb-6">
-                  <h2 className="text-white text-2xl sm:text-3xl font-bold uppercase tracking-wide mb-1">
-                    {profile.name}
-                  </h2>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h2 className="text-white text-2xl sm:text-3xl font-bold uppercase tracking-wide">
+                      {profile.name}
+                    </h2>
+                    {profile.isPremium && (
+                      <div className="relative">
+                        <BadgeCheck className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400 drop-shadow-lg" style={{ fill: 'white', stroke: '#facc15' }} />
+                      </div>
+                    )}
+                  </div>
                   <p className="text-white/80 text-sm sm:text-base uppercase tracking-widest font-medium">
-                    Student Ambassador
+                    {profile.isPremium ? 'Premium Ambassador' : 'Student Ambassador'}
                   </p>
                 </div>
 
@@ -189,6 +199,90 @@ const Account = () => {
               <p className="text-2xl mb-1">{levelInfo.emoji}</p>
               <p className="text-xs text-gray-400 uppercase tracking-wider">{levelInfo.name}</p>
             </div>
+          </motion.div>
+
+          {/* Premium Status / Upgrade Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="max-w-md mx-auto w-full"
+          >
+            {profile.isPremium ? (
+              <div className="glass-card p-6 bg-gradient-to-r from-primary-500/10 to-lime-500/10 border border-primary-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-lime-500 rounded-xl flex items-center justify-center">
+                    <Crown className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-gray-900">Premium Member</h3>
+                      <BadgeCheck className="w-5 h-5 text-primary-500" />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {profile.premiumExpiresAt 
+                        ? `Valid until ${new Date(profile.premiumExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                        : 'All premium benefits unlocked'}
+                    </p>
+                  </div>
+                </div>
+                {profile.meetingScheduled && (
+                  <button
+                    onClick={() => navigate('/meeting-scheduled')}
+                    className="w-full mt-4 py-3 bg-primary-100 text-primary-700 rounded-xl font-medium hover:bg-primary-200 transition-colors"
+                  >
+                    View Meeting Details
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="glass-card p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-lime-400 to-lime-500 text-black px-4 py-1 text-xs font-bold rounded-bl-xl">
+                  90% OFF
+                </div>
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-lime-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Star className="w-7 h-7 text-primary-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Upgrade to Premium</h3>
+                    <p className="text-sm text-gray-600">Get verified badge, exclusive tasks & more</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-3xl font-bold text-gray-900">₹19</span>
+                    <span className="text-gray-400 line-through">₹199</span>
+                    <span className="text-sm text-gray-500">/month</span>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-center gap-2">
+                      <BadgeCheck className="w-4 h-4 text-blue-500" />
+                      Verified Blue Tick Badge
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-yellow-500" />
+                      Exclusive Daily Tasks
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-primary-500" />
+                      2x Points on Referrals
+                    </li>
+                  </ul>
+                </div>
+                <button
+                  onClick={() => navigate('/premium-upgrade')}
+                  className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Get Premium @ ₹19
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+                <p className="text-center text-xs text-gray-500 mt-3">
+                  💰 Get ₹19 back after completing 1 task
+                </p>
+              </div>
+            )}
           </motion.div>
         </div>
       </motion.div>
