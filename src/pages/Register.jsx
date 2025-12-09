@@ -50,7 +50,7 @@ const Register = () => {
       setLoadingUniversities(true);
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/auth/universities?name=${encodeURIComponent(formData.collegeName)}`
+          `${import.meta.env.VITE_API_URL}/auth/universities?name=${encodeURIComponent(formData.collegeName)}`
         );
         
         // Filter and limit results
