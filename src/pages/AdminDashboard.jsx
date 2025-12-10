@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Target, TrendingUp, CheckCircle, Plus, Edit, Trash2 } from 'lucide-react';
+import { Users, Target, TrendingUp, CheckCircle, Plus, Edit, Trash2, Search } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [editingAmbassador, setEditingAmbassador] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -34,17 +35,31 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleUpdateStats = async (ambassadorId, referralCount, creditPoints) => {
+  // Filter ambassadors based on search query
+  const filteredAmbassadors = ambassadors.filter((ambassador) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      ambassador.name?.toLowerCase().includes(query) ||
+      ambassador.email?.toLowerCase().includes(query) ||
+      ambassador.collegeName?.toLowerCase().includes(query) ||
+      ambassador.level?.toLowerCase().includes(query) ||
+      ambassador.phoneNumber?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleUpdateStats = async (ambassadorId, referralCount, creditPoints, isPremium, premiumType) => {
     try {
       await api.put(`/admin/ambassadors/${ambassadorId}/stats`, {
         referralCount: parseInt(referralCount),
         creditPoints: parseInt(creditPoints),
+        isPremium,
+        premiumType
       });
-      toast.success('Stats updated successfully');
+      toast.success('Ambassador updated successfully');
       fetchDashboardData();
       setEditingAmbassador(null);
     } catch (error) {
-      toast.error('Failed to update stats');
+      toast.error('Failed to update ambassador');
     }
   };
 
@@ -93,7 +108,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -112,17 +127,33 @@ const AdminDashboard = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="glass-card p-6 border-2 border-purple-500/30"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-3 bg-purple-500/20 rounded-xl">
+                <Users className="w-6 h-6 text-purple-400" />
+              </div>
+            </div>
+            <h3 className="text-3xl font-bold mb-1 text-purple-400">{stats.premiumAmbassadors || 0}</h3>
+            <p className="text-sm text-gray-400">Premium Members</p>
+            <p className="text-xs text-purple-400 mt-1">VIP users</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="glass-card p-6"
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="p-3 bg-purple-500/20 rounded-xl">
-                <Target className="w-6 h-6 text-purple-400" />
+              <div className="p-3 bg-yellow-500/20 rounded-xl">
+                <Target className="w-6 h-6 text-yellow-400" />
               </div>
             </div>
             <h3 className="text-3xl font-bold mb-1">{stats.totalTasks}</h3>
             <p className="text-sm text-gray-400">Total Tasks</p>
-            <p className="text-xs text-green-400 mt-1">{stats.activeTasks} active</p>
+            <p className="text-xs text-green-400 mt-1">{stats.activeTasks} active, {stats.premiumTasks || 0} premium</p>
           </motion.div>
 
           <motion.div
@@ -175,11 +206,18 @@ const AdminDashboard = () => {
                 key={task.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="glass-card p-6"
+                className={`glass-card p-6 ${task.isPremiumOnly ? 'border-2 border-purple-500/50' : ''}`}
               >
                 <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-xl font-bold mb-1">{task.title}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-xl font-bold">{task.title}</h3>
+                      {task.isPremiumOnly && (
+                        <span className="bg-purple-500 text-white px-2 py-1 rounded text-xs font-bold">
+                          PREMIUM
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-400">{task.description}</p>
                   </div>
                   <div className="flex gap-2">
@@ -216,7 +254,35 @@ const AdminDashboard = () => {
 
         {/* Ambassadors Table */}
         <div>
-          <h2 className="text-2xl font-bold mb-4">Ambassadors</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Ambassadors</h2>
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by name, email, college, or level..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border-2 border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 font-bold text-lg"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Search Results Summary */}
+          {searchQuery && (
+            <div className="mb-3 text-sm text-gray-600 font-medium">
+              Found {filteredAmbassadors.length} ambassador{filteredAmbassadors.length !== 1 ? 's' : ''} matching "{searchQuery}"
+            </div>
+          )}
+          
           <div className="glass-card overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -232,9 +298,19 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {ambassadors.map((ambassador) => (
+                {filteredAmbassadors.length > 0 ? (
+                  filteredAmbassadors.map((ambassador) => (
                   <tr key={ambassador.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="p-4 font-semibold">{ambassador.name}</td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{ambassador.name}</span>
+                        {ambassador.isPremium && (
+                          <span className="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+                            ⭐ VIP
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-4 text-sm text-gray-400">{ambassador.email}</td>
                     <td className="p-4 text-sm">{ambassador.collegeName}</td>
                     <td className="p-4">
@@ -265,7 +341,23 @@ const AdminDashboard = () => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="p-8 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Search className="w-12 h-12 text-gray-400" />
+                        <p className="text-gray-400 text-lg">No ambassadors found matching "{searchQuery}"</p>
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="btn-secondary py-2 px-4 text-sm"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -277,6 +369,18 @@ const AdminDashboard = () => {
             onClose={() => setShowTaskModal(false)}
             onSuccess={() => {
               setShowTaskModal(false);
+              fetchDashboardData();
+            }}
+          />
+        )}
+
+        {/* Edit Task Modal */}
+        {editingTask && (
+          <EditTaskModal
+            task={editingTask}
+            onClose={() => setEditingTask(null)}
+            onSuccess={() => {
+              setEditingTask(null);
               fetchDashboardData();
             }}
           />
@@ -304,6 +408,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
     productThumbnail: '',
     messageTemplate: '',
     pointsReward: 0,
+    isPremiumOnly: false,
   });
 
   const handleSubmit = async (e) => {
@@ -407,6 +512,22 @@ const TaskModal = ({ onClose, onSuccess }) => {
               min="0"
             />
           </div>
+
+          <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+            <input
+              type="checkbox"
+              id="isPremiumOnly"
+              checked={formData.isPremiumOnly}
+              onChange={(e) => setFormData({ ...formData, isPremiumOnly: e.target.checked })}
+              className="w-5 h-5 rounded border-gray-600 text-purple-500 focus:ring-purple-500"
+            />
+            <label htmlFor="isPremiumOnly" className="text-sm font-medium cursor-pointer flex-1">
+              <span className="text-purple-400">⭐ Premium Only Task</span>
+              <p className="text-xs text-gray-400 mt-1">
+                Only premium members will see and can complete this task
+              </p>
+            </label>
+          </div>
           
           <div className="flex gap-3">
             <button type="submit" className="btn-primary flex-1">
@@ -426,10 +547,12 @@ const TaskModal = ({ onClose, onSuccess }) => {
 const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
   const [referralCount, setReferralCount] = useState(ambassador.referralCount);
   const [creditPoints, setCreditPoints] = useState(ambassador.creditPoints);
+  const [isPremium, setIsPremium] = useState(ambassador.isPremium || false);
+  const [premiumType, setPremiumType] = useState('monthly');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdate(ambassador.id, referralCount, creditPoints);
+    onUpdate(ambassador.id, referralCount, creditPoints, isPremium, premiumType);
   };
 
   return (
@@ -466,10 +589,216 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
               required
             />
           </div>
+
+          <div className="border-t border-gray-600 pt-4">
+            <h3 className="text-lg font-semibold mb-3 text-purple-400">Premium Status</h3>
+            
+            <div className="flex items-center gap-3 p-3 bg-purple-500/10 rounded-lg border border-purple-500/30 mb-3">
+              <input
+                type="checkbox"
+                id="isPremium"
+                checked={isPremium}
+                onChange={(e) => setIsPremium(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-600 text-purple-500 focus:ring-purple-500"
+              />
+              <label htmlFor="isPremium" className="text-sm font-medium cursor-pointer flex-1">
+                <span className="text-purple-400">⭐ Premium Member</span>
+                <p className="text-xs text-gray-400 mt-1">
+                  Grant premium access to this ambassador
+                </p>
+              </label>
+            </div>
+
+            {isPremium && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium mb-2">Premium Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPremiumType('monthly')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      premiumType === 'monthly'
+                        ? 'border-primary-500 bg-primary-500/20 text-primary-400'
+                        : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    <div className="text-sm font-bold">Monthly</div>
+                    <div className="text-xs">1 Month</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPremiumType('lifetime')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      premiumType === 'lifetime'
+                        ? 'border-purple-500 bg-purple-500/20 text-purple-400'
+                        : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    <div className="text-sm font-bold">Lifetime</div>
+                    <div className="text-xs">Forever</div>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="flex gap-3">
             <button type="submit" className="btn-primary flex-1">
-              Update Stats
+              Update Ambassador
+            </button>
+            <button type="button" onClick={onClose} className="btn-secondary flex-1">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+// Edit Task Modal Component
+const EditTaskModal = ({ task, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    title: task.title || '',
+    description: task.description || '',
+    productLink: task.productLink || '',
+    productThumbnail: task.productThumbnail || '',
+    messageTemplate: task.messageTemplate || '',
+    pointsReward: task.pointsReward || 0,
+    isActive: task.isActive !== undefined ? task.isActive : true,
+    isPremiumOnly: task.isPremiumOnly || false,
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/admin/tasks/${task.id}`, formData);
+      toast.success('Task updated successfully');
+      onSuccess();
+    } catch (error) {
+      toast.error('Failed to update task');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="glass-card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <h2 className="text-2xl font-bold mb-4">Edit Task</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Task Title</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="input-field"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="input-field"
+              rows="3"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Product Link</label>
+            <input
+              type="url"
+              value={formData.productLink}
+              onChange={(e) => setFormData({ ...formData, productLink: e.target.value })}
+              className="input-field"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Product Thumbnail URL (optional)</label>
+            <input
+              type="url"
+              value={formData.productThumbnail}
+              onChange={(e) => setFormData({ ...formData, productThumbnail: e.target.value })}
+              className="input-field"
+              placeholder="https://example.com/image.jpg"
+            />
+            {formData.productThumbnail && (
+              <div className="mt-2">
+                <img 
+                  src={formData.productThumbnail} 
+                  alt="Preview" 
+                  className="w-full h-32 object-cover rounded-lg"
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Message Template (use {`{{CODE}}`} for unique code)
+            </label>
+            <textarea
+              value={formData.messageTemplate}
+              onChange={(e) => setFormData({ ...formData, messageTemplate: e.target.value })}
+              className="input-field"
+              rows="4"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Points Reward</label>
+            <input
+              type="number"
+              value={formData.pointsReward}
+              onChange={(e) => setFormData({ ...formData, pointsReward: e.target.value })}
+              className="input-field"
+              min="0"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+            <input
+              type="checkbox"
+              id="editIsActive"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="w-5 h-5 rounded border-gray-600 text-green-500 focus:ring-green-500"
+            />
+            <label htmlFor="editIsActive" className="text-sm font-medium cursor-pointer">
+              <span className="text-green-400">✓ Task is Active</span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+            <input
+              type="checkbox"
+              id="editIsPremiumOnly"
+              checked={formData.isPremiumOnly}
+              onChange={(e) => setFormData({ ...formData, isPremiumOnly: e.target.checked })}
+              className="w-5 h-5 rounded border-gray-600 text-purple-500 focus:ring-purple-500"
+            />
+            <label htmlFor="editIsPremiumOnly" className="text-sm font-medium cursor-pointer flex-1">
+              <span className="text-purple-400">⭐ Premium Only Task</span>
+              <p className="text-xs text-gray-400 mt-1">
+                Only premium members will see and can complete this task
+              </p>
+            </label>
+          </div>
+          
+          <div className="flex gap-3">
+            <button type="submit" className="btn-primary flex-1">
+              Update Task
             </button>
             <button type="button" onClick={onClose} className="btn-secondary flex-1">
               Cancel

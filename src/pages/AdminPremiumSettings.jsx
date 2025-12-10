@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 const AdminPremiumSettings = () => {
   const [settings, setSettings] = useState({
     premiumPrice: 19,
+    lifetimePrice: 999,
     pointsMultiplier: 2,
     dailyTasksEnabled: true,
     welcomeKitEnabled: true,
@@ -36,7 +37,10 @@ const AdminPremiumSettings = () => {
     setSaving(true);
     try {
       await api.put('/admin/premium/settings', settings);
-      toast.success('Settings saved successfully');
+      toast.success('Settings saved! Users will see updated pricing immediately. ✨', {
+        duration: 4000,
+        icon: '🎉'
+      });
     } catch (error) {
       toast.error('Failed to save settings');
     } finally {
@@ -64,6 +68,11 @@ const AdminPremiumSettings = () => {
             Premium Settings
           </h1>
           <p className="text-gray-600">Configure premium subscription features</p>
+          <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Live Updates:</strong> Changes made here are immediately visible to all users on the premium upgrade page.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -73,10 +82,10 @@ const AdminPremiumSettings = () => {
               <DollarSign className="w-6 h-6 text-primary-500" />
               <h2 className="text-xl font-bold text-gray-800">Pricing</h2>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Premium Price (₹)
+                  Monthly Price (₹)
                 </label>
                 <input
                   type="number"
@@ -87,6 +96,20 @@ const AdminPremiumSettings = () => {
                   step="1"
                 />
                 <p className="text-xs text-gray-500 mt-1">Monthly subscription price</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lifetime Price (₹)
+                </label>
+                <input
+                  type="number"
+                  value={settings.lifetimePrice}
+                  onChange={(e) => setSettings({ ...settings, lifetimePrice: parseFloat(e.target.value) })}
+                  className="input-field w-full"
+                  min="0"
+                  step="1"
+                />
+                <p className="text-xs text-gray-500 mt-1">One-time lifetime payment</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

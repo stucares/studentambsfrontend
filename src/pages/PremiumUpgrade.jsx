@@ -21,7 +21,28 @@ const PremiumUpgrade = () => {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('monthly'); // 'monthly' or 'lifetime'
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 59, seconds: 59 });
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await api.get('/premium/settings');
+      setSettings(response.data.settings);
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+      // Use defaults if API fails
+      setSettings({
+        premiumPrice: 19,
+        lifetimePrice: 999,
+        pointsMultiplier: 2
+      });
+    }
+  };
 
   useEffect(() => {
     // Check if user is already premium
@@ -48,23 +69,66 @@ const PremiumUpgrade = () => {
   }, [user, navigate]);
 
   const handleUpgrade = async () => {
+    if (!settings) {
+      toast.error('Settings not loaded yet');
+      return;
+    }
+    
     setLoading(true);
     try {
+      const planAmount = selectedPlan === 'lifetime' ? settings.lifetimePrice : settings.premiumPrice;
+      
+      // Create order on backend
       const response = await api.post('/payment/create-order', {
-        amount: 19,
-        plan: 'premium_monthly'
+        amount: planAmount,
+        plan: selectedPlan
       });
 
-      if (response.data.success && response.data.paymentLink) {
-        // Redirect to Cashfree payment page
-        window.location.href = response.data.paymentLink;
+      if (response.data.success && response.data.paymentSessionId) {
+        const { paymentSessionId, environment } = response.data;
+        
+        // Load Cashfree SDK dynamically
+        const script = document.createElement('script');
+        script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+        script.onload = () => {
+          // Initialize Cashfree
+          const cashfree = window.Cashfree({
+            mode: environment === 'production' ? 'production' : 'sandbox'
+          });
+          
+          // Checkout options
+          const checkoutOptions = {
+            paymentSessionId: paymentSessionId,
+            returnUrl: `${window.location.origin}/payment-success?order_id=${response.data.orderId}`,
+            redirectTarget: '_self'
+          };
+          
+          // Initiate payment
+          cashfree.checkout(checkoutOptions).then((result) => {
+            if (result.error) {
+              console.error('Payment error:', result.error);
+              toast.error(result.error.message || 'Payment failed');
+              setLoading(false);
+            }
+            if (result.redirect) {
+              console.log('Payment redirect initiated');
+            }
+          });
+        };
+        
+        script.onerror = () => {
+          toast.error('Failed to load payment gateway');
+          setLoading(false);
+        };
+        
+        document.body.appendChild(script);
       } else {
         toast.error('Failed to create payment order');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error.response?.data?.message || 'Failed to initiate payment');
-    } finally {
       setLoading(false);
     }
   };
@@ -76,6 +140,15 @@ const PremiumUpgrade = () => {
       duration: 4000
     });
   };
+
+  // Show loading while settings are being fetched
+  if (!settings) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500"></div>
+      </div>
+    );
+  }
 
   const benefits = [
     { icon: BadgeCheck, title: 'Verified Blue Tick', description: 'Stand out with a premium badge on your profile', color: 'from-blue-500 to-blue-600' },
@@ -154,27 +227,95 @@ const PremiumUpgrade = () => {
             </div>
           </div>
 
-          {/* Pricing */}
-          <div className="bg-gray-50 rounded-xl p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-gray-500 text-sm">Premium Monthly</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-gray-900">₹19</span>
-                  <span className="text-gray-400 line-through">₹199</span>
-                  <span className="text-sm text-gray-500">/month</span>
+          {/* Pricing Plans */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {/* Monthly Plan */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setSelectedPlan('monthly')}
+              className={`bg-gray-50 rounded-xl p-6 cursor-pointer transition-all ${
+                selectedPlan === 'monthly' 
+                  ? 'ring-2 ring-primary-500 bg-primary-50' 
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-gray-500 text-sm font-medium">Monthly Plan</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-gray-900">₹{settings?.premiumPrice || 19}</span>
+                    <span className="text-gray-400 line-through text-sm">₹199</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">per month</p>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  selectedPlan === 'monthly' 
+                    ? 'border-primary-500 bg-primary-500' 
+                    : 'border-gray-300'
+                }`}>
+                  {selectedPlan === 'monthly' && (
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  )}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-green-600 font-bold text-lg">You Save ₹180!</p>
-                <p className="text-gray-500 text-sm">Limited time offer</p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-center">
+                <p className="text-yellow-800 text-xs font-medium">
+                  💰 Money back after 1 task!
+                </p>
               </div>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
-              <p className="text-yellow-800 text-sm font-medium">
-                💰 Get your ₹19 back after completing just 1 task!
+            </motion.div>
+
+            {/* Lifetime Plan */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setSelectedPlan('lifetime')}
+              className={`relative bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 cursor-pointer transition-all border-2 ${
+                selectedPlan === 'lifetime' 
+                  ? 'border-purple-500 shadow-lg' 
+                  : 'border-purple-200 hover:border-purple-300'
+              }`}
+            >
+              <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                BEST VALUE
+              </div>
+              <div className="flex items-center justify-between mb-3 mt-4">
+                <div>
+                  <p className="text-purple-700 text-sm font-bold">Lifetime Access</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-gray-900">₹{settings?.lifetimePrice || 999}</span>
+                    <span className="text-gray-400 line-through text-sm">₹4999</span>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-1 font-medium">One-time payment</p>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  selectedPlan === 'lifetime' 
+                    ? 'border-purple-500 bg-purple-500' 
+                    : 'border-purple-300'
+                }`}>
+                  {selectedPlan === 'lifetime' && (
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  )}
+                </div>
+              </div>
+              <div className="bg-purple-100 border border-purple-300 rounded-lg p-2 text-center">
+                <p className="text-purple-900 text-xs font-bold">
+                  🎉 Never pay again! Premium forever
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Selected Plan Summary */}
+          <div className="bg-gradient-to-r from-primary-50 to-lime-50 rounded-xl p-4 mb-6 text-center">
+            {selectedPlan === 'monthly' ? (
+              <p className="text-gray-700">
+                <span className="font-bold">You Selected:</span> Monthly Plan • ₹{settings?.premiumPrice || 19}/month • Cancel anytime
               </p>
-            </div>
+            ) : (
+              <p className="text-gray-700">
+                <span className="font-bold">You Selected:</span> Lifetime Access • ₹{settings?.lifetimePrice || 999} one-time • Premium forever! 🎉
+              </p>
+            )}
           </div>
 
           {/* Benefits Grid */}
@@ -203,14 +344,18 @@ const PremiumUpgrade = () => {
             <button
               onClick={handleUpgrade}
               disabled={loading}
-              className="w-full btn-primary py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+              className={`w-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
+                selectedPlan === 'lifetime'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                  : 'btn-primary'
+              } text-white rounded-xl font-bold transition-all`}
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
               ) : (
                 <>
                   <Sparkles className="w-6 h-6" />
-                  Upgrade Now @ ₹19
+                  {selectedPlan === 'lifetime' ? `Get Lifetime Access @ ₹${settings?.lifetimePrice || 999}` : `Upgrade Now @ ₹${settings?.premiumPrice || 19}`}
                   <ArrowRight className="w-6 h-6" />
                 </>
               )}

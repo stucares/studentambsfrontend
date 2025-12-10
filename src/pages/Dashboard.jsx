@@ -257,7 +257,15 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <h2 className="text-2xl font-bold mb-4">Available Tasks</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Available Tasks</h2>
+            {stats.isPremium && (
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                {stats.pointsMultiplier}x Points Active
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tasks.map((task, index) => (
               <motion.div
@@ -265,13 +273,20 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 * index }}
-                className="glass-card p-6 hover:scale-105 transition-transform"
+                className={`glass-card p-6 hover:scale-105 transition-transform ${task.isPremiumTask ? 'border-2 border-purple-500/50' : ''}`}
               >
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-xl font-bold">{task.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold">{task.title}</h3>
+                    {task.isPremiumTask && (
+                      <span className="bg-purple-500 text-white px-2 py-1 rounded text-xs font-bold">
+                        PREMIUM
+                      </span>
+                    )}
+                  </div>
                   {task.pointsReward > 0 && (
                     <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-sm font-bold">
-                      +{task.pointsReward} pts
+                      +{stats.isPremium ? task.pointsReward * 2 : task.pointsReward} pts
                     </span>
                   )}
                 </div>
