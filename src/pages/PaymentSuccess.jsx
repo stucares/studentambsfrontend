@@ -25,12 +25,21 @@ const PaymentSuccess = () => {
         const orderId = searchParams.get('order_id');
         const devMode = searchParams.get('dev_mode') === 'true';
         
+        // Validate order ID format
         if (!orderId) {
           toast.error('Invalid payment reference');
-          navigate('/dashboard');
+          setTimeout(() => navigate('/dashboard'), 1000);
+          return;
+        }
+        
+        // Additional validation: order_id should start with 'order_' or 'dev_session_'
+        if (!orderId.startsWith('order_') && !orderId.startsWith('dev_session_')) {
+          toast.error('Invalid order ID format');
+          setTimeout(() => navigate('/dashboard'), 1000);
           return;
         }
 
+        console.log('Verifying payment for order:', orderId);
         const response = await api.post('/payment/verify', { orderId, devMode });
         
         if (response.data.success) {
@@ -44,14 +53,24 @@ const PaymentSuccess = () => {
         }
       } catch (error) {
         console.error('Verification error:', error);
-        // Check if already premium (duplicate verification)
-        if (error.response?.status === 400) {
-          setVerified(true);
-          await refreshUser();
-        } else {
-          toast.error('Failed to verify payment');
-          navigate('/premium-upgrade');
+        
+        // Show appropriate error message
+        const errorMsg = error.response?.data?.message || 'Failed to verify payment';
+        toast.error(errorMsg);
+        
+        // Redirect based on error type
+        if (error.response?.status === 404) {
+          // Order not found
+          toast.error('Payment order not found. Please try again.');
+        } else if (error.response?.status === 400) {
+          // Payment not completed
+          toast.error('Payment was not completed. Please complete the payment.');
         }
+        
+        // Always redirect to premium upgrade page on error
+        setTimeout(() => {
+          navigate('/premium-upgrade');
+        }, 2000);
       } finally {
         setLoading(false);
       }
