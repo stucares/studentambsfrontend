@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
+import ScrollToTop from './components/ScrollToTop';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -20,6 +21,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminWithdrawals from './pages/AdminWithdrawals';
 import AdminPremiumMembers from './pages/AdminPremiumMembers';
 import AdminPremiumSettings from './pages/AdminPremiumSettings';
+import Terms from './pages/Terms';
+import Contact from './pages/Contact';
+import RefundPolicy from './pages/RefundPolicy';
 
 function App() {
   return (
@@ -30,6 +34,7 @@ function App() {
           v7_relativeSplatPath: true
         }}
       >
+        <ScrollToTop />
         <Toaster
           position="top-right"
           toastOptions={{
@@ -60,6 +65,9 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
           
           {/* Premium/Payment Routes */}
           <Route
