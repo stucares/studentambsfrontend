@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, DollarSign, Sparkles, Calendar, Gift } from 'lucide-react';
+import { Settings, Save, DollarSign, Sparkles, Calendar, Gift, Users } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 const AdminPremiumSettings = () => {
+  const [activeTab, setActiveTab] = useState('premium');
   const [settings, setSettings] = useState({
     premiumPrice: 19,
     lifetimePrice: 999,
@@ -15,6 +16,11 @@ const AdminPremiumSettings = () => {
     premiumDurationMonths: 1,
     cashfreeEnabled: true
   });
+  const [referralSettings, setReferralSettings] = useState({
+    pointsPerReferral: 50,
+    bonusForPremiumReferral: 100,
+    enabled: true
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -24,8 +30,12 @@ const AdminPremiumSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      const response = await api.get('/admin/premium/settings');
-      setSettings(response.data.settings);
+      const [premiumRes, referralRes] = await Promise.all([
+        api.get('/admin/premium/settings'),
+        api.get('/premium/referral-settings')
+      ]);
+      setSettings(premiumRes.data.settings);
+      setReferralSettings(referralRes.data.settings);
       setLoading(false);
     } catch (error) {
       toast.error('Failed to load settings');
@@ -43,6 +53,18 @@ const AdminPremiumSettings = () => {
       });
     } catch (error) {
       toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveReferralSettings = async () => {
+    setSaving(true);
+    try {
+      await api.put('/premium/referral-settings', referralSettings);
+      toast.success('Referral settings saved successfully! 🎉');
+    } catch (error) {
+      toast.error('Failed to save referral settings');
     } finally {
       setSaving(false);
     }
@@ -75,7 +97,39 @@ const AdminPremiumSettings = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
+        {/* Tab Navigation */}
+        <div className="flex gap-4 mb-6 border-b-2 border-gray-200">
+          <button
+            onClick={() => setActiveTab('premium')}
+            className={`px-6 py-3 font-semibold transition-all ${
+              activeTab === 'premium'
+                ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              Premium Settings
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('referral')}
+            className={`px-6 py-3 font-semibold transition-all ${
+              activeTab === 'referral'
+                ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Referral Settings
+            </div>
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'premium' && (
+          <div className="space-y-6">
           {/* Pricing */}
           <div className="glass-card p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -189,45 +243,6 @@ const AdminPremiumSettings = () => {
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
                 </label>
               </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-semibold text-gray-800">Cashfree Payments</h3>
-                  <p className="text-sm text-gray-600">Enable real payment processing (disable for dev mode)</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.cashfreeEnabled}
-                    onChange={(e) => setSettings({ ...settings, cashfreeEnabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Meeting */}
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Calendar className="w-6 h-6 text-primary-500" />
-              <h2 className="text-xl font-bold text-gray-800">Meeting Scheduling</h2>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Schedule Meeting After (Days)
-              </label>
-              <input
-                type="number"
-                value={settings.meetingDaysAfterPayment}
-                onChange={(e) => setSettings({ ...settings, meetingDaysAfterPayment: parseInt(e.target.value) })}
-                className="input-field w-full"
-                min="0"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Days after payment to automatically schedule onboarding meeting
-              </p>
             </div>
           </div>
 
@@ -243,6 +258,121 @@ const AdminPremiumSettings = () => {
             </button>
           </div>
         </div>
+        )}
+
+        {activeTab === 'referral' && (
+          <div className="space-y-6">
+          {/* Referral Points */}
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="w-6 h-6 text-primary-500" />
+              <h2 className="text-xl font-bold text-gray-800">Referral Points Configuration</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Points Per Referral
+                </label>
+                <input
+                  type="number"
+                  value={referralSettings.pointsPerReferral}
+                  onChange={(e) => setReferralSettings({
+                    ...referralSettings,
+                    pointsPerReferral: parseInt(e.target.value)
+                  })}
+                  className="input-field w-full"
+                  min="0"
+                  step="10"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Points awarded when someone registers using referral code
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bonus for Premium Referrals
+                </label>
+                <input
+                  type="number"
+                  value={referralSettings.bonusForPremiumReferral}
+                  onChange={(e) => setReferralSettings({
+                    ...referralSettings,
+                    bonusForPremiumReferral: parseInt(e.target.value)
+                  })}
+                  className="input-field w-full"
+                  min="0"
+                  step="10"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Extra points when referred user becomes premium member
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Referral System Status */}
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Settings className="w-6 h-6 text-primary-500" />
+              <h2 className="text-xl font-bold text-gray-800">System Status</h2>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h3 className="font-semibold text-gray-800">Referral System</h3>
+                <p className="text-sm text-gray-600">Enable or disable the entire referral system</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={referralSettings.enabled}
+                  onChange={(e) => setReferralSettings({
+                    ...referralSettings,
+                    enabled: e.target.checked
+                  })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div className="glass-card p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200">
+            <h3 className="font-semibold text-gray-800 mb-2">How Referral System Works</h3>
+            <ul className="text-sm text-gray-700 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-purple-600 font-bold">1.</span>
+                <span>Ambassador shares their unique referral code with friends</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-purple-600 font-bold">2.</span>
+                <span>New user enters code during registration</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-purple-600 font-bold">3.</span>
+                <span>Referrer earns {referralSettings.pointsPerReferral} points for each successful registration</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-purple-600 font-bold">4.</span>
+                <span>If referred user becomes premium, referrer gets +{referralSettings.bonusForPremiumReferral} bonus points</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleSaveReferralSettings}
+              disabled={saving}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving...' : 'Save Referral Settings'}
+            </button>
+          </div>
+        </div>
+        )}
       </motion.div>
     </div>
   );

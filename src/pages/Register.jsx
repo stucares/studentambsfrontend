@@ -20,6 +20,7 @@ const Register = () => {
     phoneNumber: '',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
     profileImage: null,
+    referralCode: '',
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -186,6 +187,7 @@ const Register = () => {
       collegeName: formData.collegeName,
       phoneNumber: formData.phoneNumber,
       avatar: useCustomImage ? formData.profileImage : formData.avatar,
+      referralCode: formData.referralCode || undefined,
     });
 
     setLoading(false);
@@ -446,6 +448,27 @@ const Register = () => {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              Referral Code <span className="text-gray-500 font-normal">(Optional)</span>
+            </label>
+            <div className="relative">
+              <Hash className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                name="referralCode"
+                value={formData.referralCode}
+                onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
+                className="input-field pl-10"
+                placeholder="Enter referral code if you have one"
+                maxLength="10"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Have a friend who's already an ambassador? Enter their code to help them earn points!
+            </p>
           </div>
 
           <button

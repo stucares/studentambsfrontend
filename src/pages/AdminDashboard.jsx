@@ -13,6 +13,10 @@ const AdminDashboard = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [editingAmbassador, setEditingAmbassador] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [todayLogins, setTodayLogins] = useState([]);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchDashboardData();
@@ -35,17 +39,62 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filter ambassadors based on search query
+  // Filter ambassadors based on search query and date
   const filteredAmbassadors = ambassadors.filter((ambassador) => {
     const query = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = (
       ambassador.name?.toLowerCase().includes(query) ||
       ambassador.email?.toLowerCase().includes(query) ||
       ambassador.collegeName?.toLowerCase().includes(query) ||
       ambassador.level?.toLowerCase().includes(query) ||
-      ambassador.phoneNumber?.toLowerCase().includes(query)
+      ambassador.phoneNumber?.toLowerCase().includes(query) ||
+      ambassador.uniqueCode?.toLowerCase().includes(query)
     );
+
+    if (!matchesSearch) return false;
+
+    // Date filter
+    if (dateFilter) {
+      const createdDate = new Date(ambassador.createdAt).toISOString().split('T')[0];
+      return createdDate === dateFilter;
+    }
+
+    return true;
   });
+
+  // Get today's logins (ambassadors who logged in today)
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const loggedInToday = ambassadors.filter(ambassador => {
+      if (!ambassador.lastLoginAt) return false;
+      const loginDate = new Date(ambassador.lastLoginAt).toISOString().split('T')[0];
+      return loginDate === today;
+    });
+    setTodayLogins(loggedInToday);
+  }, [ambassadors]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAmbassadors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAmbassadors = filteredAmbassadors.slice(startIndex, endIndex);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, dateFilter]);
 
   const handleUpdateStats = async (ambassadorId, referralCount, creditPoints, isPremium, premiumType) => {
     try {
@@ -70,6 +119,16 @@ const AdminDashboard = () => {
       fetchDashboardData();
     } catch (error) {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleApproveCode = async (ambassadorId, approved) => {
+    try {
+      await api.put(`/admin/ambassadors/${ambassadorId}/approve-code`, { approved });
+      toast.success(approved ? 'Unique code approved! 🎉' : 'Approval revoked');
+      fetchDashboardData();
+    } catch (error) {
+      toast.error('Failed to update approval status');
     }
   };
 
@@ -252,27 +311,79 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Today's Logins Section */}
+        {todayLogins.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              Today's Logins ({todayLogins.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {todayLogins.slice(0, 6).map((ambassador) => (
+                <div key={ambassador.id} className="glass-card p-4 hover:scale-105 transition-transform">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold">
+                      {ambassador.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm">{ambassador.name}</h3>
+                      <p className="text-xs text-gray-400">{ambassador.email}</p>
+                      <p className="text-xs text-green-400 mt-1">
+                        {new Date(ambassador.lastLoginAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    {ambassador.isPremium && (
+                      <span className="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+                        ⭐ VIP
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Ambassadors Table */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Ambassadors</h2>
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <input
-                type="text"
-                placeholder="Search by name, email, college, or level..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white border-2 border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 font-bold text-lg"
-                >
-                  ✕
-                </button>
-              )}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+            <h2 className="text-2xl font-bold">Ambassadors ({filteredAmbassadors.length})</h2>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <div className="relative">
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="px-4 py-2 bg-white border-2 border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Filter by date"
+                />
+                {dateFilter && (
+                  <button
+                    onClick={() => setDateFilter('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 font-bold text-lg"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div className="relative w-full md:w-96">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, college, level, or unique code..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-white border-2 border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 font-bold text-lg"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           
@@ -291,6 +402,8 @@ const AdminDashboard = () => {
                   <th className="text-left p-4">Email</th>
                   <th className="text-left p-4">College</th>
                   <th className="text-left p-4">Level</th>
+                  <th className="text-center p-4">Unique Code</th>
+                  <th className="text-center p-4">Code Status</th>
                   <th className="text-center p-4">Referrals</th>
                   <th className="text-center p-4">Points</th>
                   <th className="text-center p-4">Status</th>
@@ -298,8 +411,8 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredAmbassadors.length > 0 ? (
-                  filteredAmbassadors.map((ambassador) => (
+                {paginatedAmbassadors.length > 0 ? (
+                  paginatedAmbassadors.map((ambassador) => (
                   <tr key={ambassador.id} className="border-b border-white/5 hover:bg-white/5">
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -317,6 +430,21 @@ const AdminDashboard = () => {
                       <span className="px-3 py-1 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full text-xs font-bold">
                         {ambassador.level}
                       </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="font-mono text-sm">{ambassador.uniqueCode}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => handleApproveCode(ambassador.id, !ambassador.uniqueCodeApproved)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                          ambassador.uniqueCodeApproved
+                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                            : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                        }`}
+                      >
+                        {ambassador.uniqueCodeApproved ? '✓ Approved' : '⏳ Pending'}
+                      </button>
                     </td>
                     <td className="p-4 text-center font-bold">{ambassador.referralCount}</td>
                     <td className="p-4 text-center font-bold">{ambassador.creditPoints}</td>
@@ -344,7 +472,7 @@ const AdminDashboard = () => {
                 ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="p-8 text-center">
+                    <td colSpan="10" className="p-8 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <Search className="w-12 h-12 text-gray-400" />
                         <p className="text-gray-400 text-lg">No ambassadors found matching "{searchQuery}"</p>
@@ -361,6 +489,44 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {filteredAmbassadors.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-gray-400">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredAmbassadors.length)} of {filteredAmbassadors.length} ambassadors
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === 1
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-primary-500 text-white hover:bg-primary-600'
+                  }`}
+                >
+                  Previous
+                </button>
+                <div className="flex items-center gap-2 px-4">
+                  <span className="text-sm text-gray-400">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </div>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    currentPage === totalPages
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-primary-500 text-white hover:bg-primary-600'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Task Modal */}

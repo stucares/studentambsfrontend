@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Target, Award, Copy, Check } from 'lucide-react';
+import { TrendingUp, Target, Award, Copy, Check, Lock, AlertCircle } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo, copyToClipboard } from '../utils/helpers';
@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copiedTask, setCopiedTask] = useState(null);
+  const [codeApproved, setCodeApproved] = useState(false);
 
   useEffect(() => {
     if (demoMode) {
@@ -71,16 +72,26 @@ const Dashboard = () => {
         api.get('/ambassador/profile'),
       ]);
       const ambassadorCode = profileRes.data.ambassador.uniqueCode;
+      const isApproved = profileRes.data.ambassador.uniqueCodeApproved;
+      setCodeApproved(isApproved);
       setStats({...statsRes.data.stats, uniqueCode: ambassadorCode});
       
       // Replace {{CODE}} placeholder in all task messages
       const tasksWithCode = tasksRes.data.tasks.map(task => ({
         ...task,
-        messageTemplate: task.messageTemplate.replace(/\{\{CODE\}\}/gi, ambassadorCode)
+        messageTemplate: task.messageTemplate.replace(/\{\{CODE\}\}/gi, ambassadorCode || 'PENDING')
       }));
       
       setTasks(tasksWithCode);
       setLoading(false);
+      
+      // Show warning if code not approved
+      if (!isApproved) {
+        toast('⏳ Your tasks are locked until admin approves your unique code', {
+          duration: 5000,
+          icon: '🔒'
+        });
+      }
     } catch (error) {
       toast.error('Failed to load dashboard data');
       setLoading(false);
@@ -266,6 +277,25 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
               </span>
             )}
           </div>
+          
+          {/* Lock Message */}
+          {!codeApproved && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
+              <div className="flex items-start">
+                <Lock className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-yellow-800 mb-1">
+                    Tasks Locked 🔒
+                  </h3>
+                  <p className="text-sm text-yellow-700">
+                    Your tasks are currently locked. Admin needs to approve your unique code first.
+                    You'll be notified once approved and can start earning points!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tasks.map((task, index) => (
               <motion.div
@@ -273,8 +303,18 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 * index }}
-                className={`glass-card p-6 hover:scale-105 transition-transform ${task.isPremiumTask ? 'border-2 border-purple-500/50' : ''}`}
+                className={`glass-card p-6 relative ${task.isPremiumTask ? 'border-2 border-purple-500/50' : ''} ${!codeApproved ? 'opacity-50' : 'hover:scale-105'} transition-transform`}
               >
+                {/* Lock Overlay */}
+                {!codeApproved && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10 backdrop-blur-sm">
+                    <div className="text-center">
+                      <Lock className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-gray-300">Awaiting Approval</p>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xl font-bold">{task.title}</h3>
@@ -298,6 +338,9 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                       src={task.productThumbnail} 
                       alt={task.title}
                       className="w-full h-40 object-cover"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+                      }}
                     />
                   </div>
                 )}
@@ -315,7 +358,8 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCopyMessage(task)}
-                    className="flex-1 btn-primary flex items-center justify-center gap-2"
+                    disabled={!codeApproved}
+                    className={`flex-1 btn-primary flex items-center justify-center gap-2 ${!codeApproved ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {copiedTask === task.id ? (
                       <>
@@ -333,7 +377,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                     href={task.productLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-secondary"
+                    className={`btn-secondary ${!codeApproved ? 'pointer-events-none opacity-50' : ''}`}
                   >
                     View Product
                   </a>

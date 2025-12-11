@@ -5,7 +5,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
-import { BadgeCheck, Star, Crown, Sparkles, ArrowRight } from 'lucide-react';
+import { BadgeCheck, Star, Crown, Sparkles, ArrowRight, Copy, AlertCircle } from 'lucide-react';
 
 const Account = () => {
   const navigate = useNavigate();
@@ -156,20 +156,26 @@ const Account = () => {
                     <div className="flex items-center gap-2">
                       <div>
                         <p className="text-white/60 text-xs uppercase tracking-wider mb-1">Ambassador Code</p>
-                        <p className="text-white font-mono font-bold text-base sm:text-lg tracking-wider">{profile.uniqueCode}</p>
+                        {profile.uniqueCodeApproved ? (
+                          <p className="text-white font-mono font-bold text-base sm:text-lg tracking-wider">{profile.uniqueCode}</p>
+                        ) : (
+                          <p className="text-white/50 text-sm italic">Pending Approval</p>
+                        )}
                       </div>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(profile.uniqueCode);
-                          toast.success('Code copied to clipboard!');
-                        }}
-                        className="mt-4 p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                        title="Copy to clipboard"
-                      >
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                        </svg>
-                      </button>
+                      {profile.uniqueCodeApproved && (
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(profile.uniqueCode);
+                            toast.success('Code copied to clipboard!');
+                          }}
+                          className="mt-4 p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                          title="Copy to clipboard"
+                        >
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border-2 border-white/40">
                       <span className="text-white font-bold text-sm">{levelInfo.emoji} {levelInfo.name}</span>
@@ -200,6 +206,66 @@ const Account = () => {
               <p className="text-xs text-gray-400 uppercase tracking-wider">{levelInfo.name}</p>
             </div>
           </motion.div>
+
+          {/* Referral Code Status Section */}
+          {!profile.uniqueCodeApproved && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="max-w-md mx-auto w-full"
+            >
+              <div className="glass-card p-6 bg-yellow-50 border-l-4 border-yellow-400">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-lg font-bold text-yellow-800 mb-1">
+                      Code Pending Approval
+                    </h3>
+                    <p className="text-sm text-yellow-700 mb-2">
+                      Your unique referral code is awaiting admin approval. Once approved, you'll be able to share it with friends and start earning referral points!
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-yellow-600">
+                      <div className="animate-pulse">⏳</div>
+                      <span>Admin will review your code shortly</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Referral Code Section (when approved) */}
+          {profile.uniqueCodeApproved && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="max-w-md mx-auto w-full"
+            >
+              <div className="glass-card p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Your Referral Code</h3>
+                <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border-2 border-purple-200 mb-3">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Share this code</p>
+                    <p className="text-2xl font-bold text-purple-600 font-mono">{profile.uniqueCode}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(profile.uniqueCode);
+                      toast.success('Referral code copied!');
+                    }}
+                    className="p-3 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
+                  >
+                    <Copy className="h-5 w-5 text-purple-600" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 text-center">
+                  Share this code to refer friends and earn points! 🎉
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Premium Status / Upgrade Section */}
           <motion.div
