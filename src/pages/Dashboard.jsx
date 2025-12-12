@@ -152,7 +152,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
           <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
             Dashboard
           </h1>
-          <p className="text-gray-300">Track your performance and complete tasks</p>
+          <p className="text-gray-600">Track your performance and complete tasks</p>
         </div>
 
         {/* Stats Grid */}
@@ -310,7 +310,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10 backdrop-blur-sm">
                     <div className="text-center">
                       <Lock className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm font-semibold text-gray-300">Awaiting Approval</p>
+                      <p className="text-sm font-semibold text-gray-600">Awaiting Approval</p>
                     </div>
                   </div>
                 )}
@@ -345,7 +345,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                   </div>
                 )}
 
-                <p className="text-gray-300 mb-4">{task.description}</p>
+                <p className="text-gray-600 mb-4">{task.description}</p>
                 
                 <div className="bg-white/5 rounded-lg p-3 mb-4">
                   <p className="text-sm text-gray-400 mb-1">Share this message:</p>

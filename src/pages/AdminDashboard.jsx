@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Target, TrendingUp, CheckCircle, Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Users, Target, TrendingUp, CheckCircle, Plus, Edit, Trash2, Search, Upload, Download } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -16,10 +16,15 @@ const AdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [todayLogins, setTodayLogins] = useState([]);
+  const [uploadingCSV, setUploadingCSV] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [csvData, setCsvData] = useState(null);
+  const [referralSettings, setReferralSettings] = useState({ pointsPerReferral: 50 });
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchDashboardData();
+    fetchReferralSettings();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -36,6 +41,107 @@ const AdminDashboard = () => {
     } catch (error) {
       toast.error('Failed to load dashboard data');
       setLoading(false);
+    }
+  };
+
+  const fetchReferralSettings = async () => {
+    try {
+      const res = await api.get('/premium/referral-settings');
+      setReferralSettings(res.data.settings);
+    } catch (error) {
+      console.error('Failed to load referral settings');
+    }
+  };
+
+  const handleDownloadSample = () => {
+    const csvContent = 'uniqueCode,referralCount\nSTUFC21D3F8,5\nSTUFC21D3F9,10\nSTUFC21D4A0,3';
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_referral_update.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toast.success('Sample CSV downloaded!');
+  };
+
+  const handleCSVUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Please upload a CSV file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          toast.error('CSV file is empty or invalid');
+          return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const data = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',');
+          const row = {};
+          headers.forEach((header, index) => {
+            row[header] = values[index]?.trim();
+          });
+          
+          if (row.uniquecode && row.referralcount) {
+            data.push({
+              uniqueCode: row.uniquecode,
+              referralCount: parseInt(row.referralcount)
+            });
+          }
+        }
+
+        if (data.length === 0) {
+          toast.error('No valid data found in CSV');
+          return;
+        }
+
+        setCsvData(data);
+        setShowUploadModal(true);
+      } catch (error) {
+        toast.error('Failed to parse CSV file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!csvData) return;
+
+    setUploadingCSV(true);
+    try {
+      const res = await api.post('/admin/ambassadors/bulk-update', {
+        data: csvData,
+        pointsPerReferral: referralSettings.pointsPerReferral || 50
+      });
+
+      toast.success(res.data.message);
+      setShowUploadModal(false);
+      setCsvData(null);
+      fetchDashboardData();
+
+      if (res.data.results.errors.length > 0) {
+        console.log('Upload errors:', res.data.results.errors);
+        toast.error(`${res.data.results.failed} records failed to update`);
+      }
+    } catch (error) {
+      toast.error('Failed to update ambassadors');
+    } finally {
+      setUploadingCSV(false);
     }
   };
 
@@ -349,6 +455,27 @@ const AdminDashboard = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
             <h2 className="text-2xl font-bold">Ambassadors ({filteredAmbassadors.length})</h2>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              {/* CSV Upload and Download Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownloadSample}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
+                  title="Download sample CSV template"
+                >
+                  <Download className="w-4 h-4" />
+                  Sample CSV
+                </button>
+                <label className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  Upload CSV
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCSVUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
               <div className="relative">
                 <input
                   type="date"
@@ -559,6 +686,93 @@ const AdminDashboard = () => {
             onClose={() => setEditingAmbassador(null)}
             onUpdate={handleUpdateStats}
           />
+        )}
+
+        {/* CSV Upload Confirmation Modal */}
+        {showUploadModal && csvData && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-card p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            >
+              <h2 className="text-2xl font-bold mb-4 gradient-text">Confirm CSV Upload</h2>
+              
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-300 mb-2">
+                  <strong>Ready to update {csvData.length} ambassador(s)</strong>
+                </p>
+                <p className="text-xs text-gray-400">
+                  Points per referral: <strong className="text-green-400">{referralSettings.pointsPerReferral || 50} points</strong>
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Each new referral will add {referralSettings.pointsPerReferral || 50} points to the ambassador's account.
+                </p>
+              </div>
+
+              <div className="bg-white/5 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
+                <h3 className="text-sm font-bold mb-3 text-gray-300">Preview Data:</h3>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left py-2 text-gray-400">Unique Code</th>
+                      <th className="text-right py-2 text-gray-400">Referral Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvData.slice(0, 10).map((row, index) => (
+                      <tr key={index} className="border-b border-white/5">
+                        <td className="py-2 font-mono">{row.uniqueCode}</td>
+                        <td className="text-right py-2">{row.referralCount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {csvData.length > 10 && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    ... and {csvData.length - 10} more records
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                <p className="text-xs text-yellow-300">
+                  ⚠️ This will update referral counts and add points based on new referrals. 
+                  Existing data will be preserved, only increments will be applied.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setCsvData(null);
+                  }}
+                  disabled={uploadingCSV}
+                  className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmUpload}
+                  disabled={uploadingCSV}
+                  className="flex-1 btn-primary py-3 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {uploadingCSV ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5" />
+                      Confirm Upload
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </motion.div>
     </div>

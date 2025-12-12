@@ -463,7 +463,7 @@ const Register = () => {
                 onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                 className="input-field pl-10"
                 placeholder="Enter referral code if you have one"
-                maxLength="10"
+                maxLength="11"
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">

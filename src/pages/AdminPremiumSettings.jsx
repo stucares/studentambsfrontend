@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, DollarSign, Sparkles, Calendar, Gift, Users } from 'lucide-react';
+import { Settings, Save, DollarSign, Sparkles, Calendar, Gift, Users, Upload } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -269,9 +269,10 @@ const AdminPremiumSettings = () => {
               <h2 className="text-xl font-bold text-gray-800">Referral Points Configuration</h2>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Points Per Referral
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border-2 border-green-300">
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-800 mb-2">
+                  <span className="text-2xl">💰</span>
+                  Points Per Referral (CSV Upload Base)
                 </label>
                 <input
                   type="number"
@@ -280,13 +281,21 @@ const AdminPremiumSettings = () => {
                     ...referralSettings,
                     pointsPerReferral: parseInt(e.target.value)
                   })}
-                  className="input-field w-full"
+                  className="input-field w-full text-lg font-bold"
                   min="0"
                   step="10"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Points awarded when someone registers using referral code
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-700 font-semibold">
+                    ✓ Used for manual registration referrals
+                  </p>
+                  <p className="text-xs text-gray-700 font-semibold">
+                    ✓ Used for CSV bulk upload calculations
+                  </p>
+                  <p className="text-xs text-green-700 mt-2 bg-green-100 p-2 rounded">
+                    <strong>Example:</strong> If you set 50 points and upload CSV showing an ambassador got 3 new referrals, they will receive 150 points (3 × 50)
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -358,6 +367,24 @@ const AdminPremiumSettings = () => {
                 <span>If referred user becomes premium, referrer gets +{referralSettings.bonusForPremiumReferral} bonus points</span>
               </li>
             </ul>
+          </div>
+
+          {/* CSV Upload Info */}
+          <div className="glass-card p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
+            <div className="flex items-start gap-3">
+              <Upload className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-bold text-gray-800 mb-2">Bulk Update via CSV</h3>
+                <p className="text-sm text-gray-700 mb-2">
+                  You can update referral counts and points in bulk by uploading a CSV file from the Ambassador Dashboard.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                  <li>Points per referral setting ({referralSettings.pointsPerReferral} points) will be used for calculations</li>
+                  <li>Only new referrals (increments) will add points to ambassadors</li>
+                  <li>CSV format: uniqueCode, referralCount</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Save Button */}

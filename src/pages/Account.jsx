@@ -5,7 +5,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
-import { BadgeCheck, Star, Crown, Sparkles, ArrowRight, Copy, AlertCircle } from 'lucide-react';
+import { BadgeCheck, Star, Crown, Sparkles, ArrowRight, Copy, AlertCircle, Camera, X, Upload } from 'lucide-react';
 
 const Account = () => {
   const navigate = useNavigate();
@@ -13,6 +13,26 @@ const Account = () => {
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [updatingAvatar, setUpdatingAvatar] = useState(false);
+  const [customImagePreview, setCustomImagePreview] = useState(null);
+  const [uploadingCustom, setUploadingCustom] = useState(false);
+
+  const avatarOptions = [
+    { id: 1, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4' },
+    { id: 2, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sam&backgroundColor=c0aede' },
+    { id: 3, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan&backgroundColor=ffd5dc' },
+    { id: 4, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Taylor&backgroundColor=d1f4e0' },
+    { id: 5, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan&backgroundColor=ffe8cc' },
+    { id: 6, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey&backgroundColor=ffeaa7' },
+    { id: 7, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riley&backgroundColor=fab1a0' },
+    { id: 8, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jamie&backgroundColor=74b9ff' },
+    { id: 9, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dakota&backgroundColor=a29bfe' },
+    { id: 10, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Avery&backgroundColor=fd79a8' },
+    { id: 11, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Parker&backgroundColor=81ecec' },
+    { id: 12, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Quinn&backgroundColor=55efc4' },
+  ];
 
   useEffect(() => {
     if (demoMode) {
@@ -41,6 +61,62 @@ const Account = () => {
       toast.error('Failed to load profile');
       setLoading(false);
     }
+  };
+
+  const handleUpdateAvatar = async () => {
+    if (!selectedAvatar && !customImagePreview) {
+      toast.error('Please select an avatar or upload an image');
+      return;
+    }
+
+    setUpdatingAvatar(true);
+    try {
+      const avatarUrl = customImagePreview || selectedAvatar;
+      await api.put('/ambassador/profile', { avatar: avatarUrl });
+      setProfile({ ...profile, avatar: avatarUrl });
+      toast.success('Profile picture updated successfully!');
+      setShowAvatarModal(false);
+      setCustomImagePreview(null);
+      setSelectedAvatar(null);
+    } catch (error) {
+      toast.error('Failed to update profile picture');
+    } finally {
+      setUpdatingAvatar(false);
+    }
+  };
+
+  const handleCustomImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingCustom(true);
+    const reader = new FileReader();
+    
+    reader.onloadend = () => {
+      setCustomImagePreview(reader.result);
+      setSelectedAvatar(null); // Deselect avatar if custom image is uploaded
+      setUploadingCustom(false);
+      toast.success('Image loaded! Click Update to save.');
+    };
+
+    reader.onerror = () => {
+      toast.error('Failed to read image file');
+      setUploadingCustom(false);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   if (loading) {
@@ -84,27 +160,32 @@ const Account = () => {
 
               {/* Content */}
               <div className="relative h-full p-6 sm:p-8 flex flex-col">
-                {/* Header with My ID Card label */}
-                <div className="flex items-center justify-between mb-8">
-                  <div className="bg-white/95 px-3 py-2 rounded-lg shadow-md">
-                    <img src="/StuCare's TM.png" alt="Stucare Logo" className="h-8 sm:h-10 w-auto" />
-                  </div>
-                  <div className="flex items-center gap-2 text-white/90">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
-                    </svg>
-                    <span className="text-xs sm:text-sm uppercase tracking-wider font-medium">My ID Card</span>
+                {/* Header with logos */}
+                <div className="flex items-center justify-center mb-6">
+                  <div className="bg-white/95 px-4 py-2 rounded-lg shadow-md flex items-center gap-3">
+                    <img src="/StuCare's TM.png" alt="Stucare" className="h-8 w-auto" />
+                    <p className="text-xl font-bold text-gray-400">×</p>
+                    <img src="/3048_Scholare_HK-JPG-01__1_-removebg-preview.png" alt="Scholare" className="h-8 w-auto" />
                   </div>
                 </div>
 
                 {/* Profile Photo - Large Circular */}
                 <div className="flex justify-center mb-6">
-                  <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-white/30 overflow-hidden bg-white shadow-2xl">
-                    <img 
-                      src={profile.avatar} 
-                      alt={profile.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative group">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-white/30 overflow-hidden bg-white shadow-2xl">
+                      <img 
+                        src={profile.avatar} 
+                        alt={profile.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setShowAvatarModal(true)}
+                      className="absolute bottom-2 right-2 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform group-hover:bg-primary-500 group-hover:text-white"
+                      title="Edit avatar"
+                    >
+                      <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
                   </div>
                 </div>
 
@@ -116,7 +197,7 @@ const Account = () => {
                     </h2>
                     {profile.isPremium && (
                       <div className="relative">
-                        <BadgeCheck className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400 drop-shadow-lg" style={{ fill: 'white', stroke: '#facc15' }} />
+                        <BadgeCheck className="w-7 h-7 sm:w-8 sm:h-8 text-purple-400 drop-shadow-lg" style={{ fill: 'white', stroke: '#ac63e6' }} />
                       </div>
                     )}
                   </div>
@@ -352,6 +433,145 @@ const Account = () => {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Avatar Selection Modal */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+          >
+            <button
+              onClick={() => setShowAvatarModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-2xl font-bold mb-6 gradient-text">Choose Your Profile Picture</h2>
+
+            {/* Custom Image Upload */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-3 text-gray-300">
+                Upload Custom Image
+              </label>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <label className="flex-1 cursor-pointer">
+                  <div className="glass-card p-6 hover:bg-white/10 transition-all border-2 border-dashed border-white/20 hover:border-primary-500 flex flex-col items-center gap-3">
+                    <Upload className="w-8 h-8 text-primary-500" />
+                    <div className="text-center">
+                      <p className="font-semibold text-white">Click to upload</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCustomImageUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Custom Image Preview */}
+                {customImagePreview && (
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-xl overflow-hidden border-4 border-primary-500 shadow-lg">
+                      <img
+                        src={customImagePreview}
+                        alt="Custom preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setCustomImagePreview(null)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                    <p className="text-xs text-center text-green-400 mt-2 font-semibold">✓ Ready to update</p>
+                  </div>
+                )}
+              </div>
+              {uploadingCustom && (
+                <div className="flex items-center gap-2 mt-3 text-primary-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-primary-400"></div>
+                  <span className="text-sm">Loading image...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-[#0a0e27] text-gray-400">OR CHOOSE AN AVATAR</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-6">
+              {avatarOptions.map((avatar) => (
+                <motion.div
+                  key={avatar.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedAvatar(avatar.url)}
+                  className={`cursor-pointer rounded-xl p-2 transition-all ${
+                    selectedAvatar === avatar.url
+                      ? 'bg-gradient-to-br from-primary-500 to-accent-500 shadow-lg'
+                      : 'bg-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="aspect-square rounded-lg overflow-hidden bg-white">
+                    <img
+                      src={avatar.url}
+                      alt={`Avatar ${avatar.id}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {selectedAvatar === avatar.url && (
+                    <div className="flex justify-center mt-2">
+                      <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateAvatar}
+                disabled={(!selectedAvatar && !customImagePreview) || updatingAvatar}
+                className="flex-1 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {updatingAvatar ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5" />
+                    Update Profile Picture
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
