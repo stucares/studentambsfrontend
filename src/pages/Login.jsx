@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import WhatsAppPopup from '../components/WhatsAppPopup';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -150,6 +151,9 @@ const Login = () => {
           </p>
         </div>
       </motion.div>
+
+      {/* WhatsApp Popup */}
+      <WhatsAppPopup trigger="login" />
     </div>
   );
 };

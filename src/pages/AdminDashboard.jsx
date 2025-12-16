@@ -19,7 +19,7 @@ const AdminDashboard = () => {
   const [uploadingCSV, setUploadingCSV] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [csvData, setCsvData] = useState(null);
-  const [referralSettings, setReferralSettings] = useState({ pointsPerReferral: 50 });
+  const [referralSettings, setReferralSettings] = useState({ pointsPerReferral: 50, bonusForPremiumReferral: 100 });
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -531,7 +531,7 @@ const AdminDashboard = () => {
                   <th className="text-left p-4">Level</th>
                   <th className="text-center p-4">Unique Code</th>
                   <th className="text-center p-4">Code Status</th>
-                  <th className="text-center p-4">Referrals</th>
+                  <th className="text-center p-4">Referrals (Paid/Total)</th>
                   <th className="text-center p-4">Points</th>
                   <th className="text-center p-4">Status</th>
                   <th className="text-center p-4">Actions</th>
@@ -573,7 +573,20 @@ const AdminDashboard = () => {
                         {ambassador.uniqueCodeApproved ? '✓ Approved' : '⏳ Pending'}
                       </button>
                     </td>
-                    <td className="p-4 text-center font-bold">{ambassador.referralCount}</td>
+                    <td className="p-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-bold text-lg">
+                          <span className="text-green-400">{ambassador.premiumReferrals || 0}</span>
+                          <span className="text-gray-400">/</span>
+                          <span className="text-blue-400">{ambassador.totalReferrals || ambassador.referralCount}</span>
+                        </span>
+                        {ambassador.pendingReferrals > 0 && (
+                          <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded">
+                            {ambassador.pendingReferrals} pending
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-4 text-center font-bold">{ambassador.creditPoints}</td>
                     <td className="p-4 text-center">
                       <button
@@ -698,19 +711,17 @@ const AdminDashboard = () => {
             >
               <h2 className="text-2xl font-bold mb-4 gradient-text">Confirm CSV Upload</h2>
               
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-300 mb-2">
-                  <strong>Ready to update {csvData.length} ambassador(s)</strong>
-                </p>
-                <p className="text-xs text-gray-400">
-                  Points per referral: <strong className="text-green-400">{referralSettings.pointsPerReferral || 50} points</strong>
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Each new referral will add {referralSettings.pointsPerReferral || 50} points to the ambassador's account.
-                </p>
-              </div>
-
-              <div className="bg-white/5 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-300 mb-2">
+                <strong>Ready to update {csvData.length} ambassador(s)</strong>
+              </p>
+              <p className="text-xs text-gray-400 mb-2">
+                This will update referral counts from your Shopify data.
+              </p>
+              <p className="text-xs text-purple-300 bg-purple-500/20 p-2 rounded">
+                💡 <strong>Note:</strong> Points ({referralSettings.pointsPerReferral || 50} per referral + {referralSettings.bonusForPremiumReferral || 100} bonus) are awarded automatically when referred users purchase premium, not during CSV upload.
+              </p>
+            </div>              <div className="bg-white/5 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
                 <h3 className="text-sm font-bold mb-3 text-gray-300">Preview Data:</h3>
                 <table className="w-full text-sm">
                   <thead>
@@ -735,14 +746,14 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
-                <p className="text-xs text-yellow-300">
-                  ⚠️ This will update referral counts and add points based on new referrals. 
-                  Existing data will be preserved, only increments will be applied.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+              <p className="text-xs text-yellow-300 mb-2">
+                ⚠️ <strong>Important:</strong> This will update referral counts based on Shopify data.
+              </p>
+              <p className="text-xs text-yellow-200">
+                💡 <strong>Note:</strong> Points are only awarded when referred users purchase premium, not during CSV upload.
+              </p>
+            </div>              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowUploadModal(false);

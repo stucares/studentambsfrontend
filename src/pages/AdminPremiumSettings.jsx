@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, DollarSign, Sparkles, Calendar, Gift, Users, Upload } from 'lucide-react';
+import { Settings, Save, DollarSign, Sparkles, Calendar, Gift, Users, Upload, MessageCircle } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -21,6 +21,17 @@ const AdminPremiumSettings = () => {
     bonusForPremiumReferral: 100,
     enabled: true
   });
+  const [popupSettings, setPopupSettings] = useState({
+    enabled: true,
+    title: 'Join Our Community! 🎉',
+    message: 'Connect with fellow ambassadors and get exclusive updates!',
+    buttonText: 'Join WhatsApp Group',
+    whatsappLink: '',
+    showAfterSeconds: 3,
+    showOnLogin: true,
+    showOnRegister: true,
+    showOnDashboard: true
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -30,12 +41,14 @@ const AdminPremiumSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      const [premiumRes, referralRes] = await Promise.all([
+      const [premiumRes, referralRes, popupRes] = await Promise.all([
         api.get('/admin/premium/settings'),
-        api.get('/premium/referral-settings')
+        api.get('/premium/referral-settings'),
+        api.get('/premium/popup-settings')
       ]);
       setSettings(premiumRes.data.settings);
       setReferralSettings(referralRes.data.settings);
+      setPopupSettings(popupRes.data.settings);
       setLoading(false);
     } catch (error) {
       toast.error('Failed to load settings');
@@ -65,6 +78,18 @@ const AdminPremiumSettings = () => {
       toast.success('Referral settings saved successfully! 🎉');
     } catch (error) {
       toast.error('Failed to save referral settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSavePopupSettings = async () => {
+    setSaving(true);
+    try {
+      await api.put('/premium/popup-settings', popupSettings);
+      toast.success('WhatsApp popup settings saved successfully! 🎉');
+    } catch (error) {
+      toast.error('Failed to save popup settings');
     } finally {
       setSaving(false);
     }
@@ -123,6 +148,19 @@ const AdminPremiumSettings = () => {
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5" />
               Referral Settings
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('popup')}
+            className={`px-6 py-3 font-semibold transition-all ${
+              activeTab === 'popup'
+                ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              WhatsApp Popup
             </div>
           </button>
         </div>
@@ -286,14 +324,17 @@ const AdminPremiumSettings = () => {
                   step="10"
                 />
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-gray-700 font-semibold">
-                    ✓ Used for manual registration referrals
+                  <p className="text-xs text-red-700 font-bold bg-red-100 p-2 rounded mb-2">
+                    🎯 <strong>Points awarded ONLY when referred user purchases premium</strong>
                   </p>
                   <p className="text-xs text-gray-700 font-semibold">
-                    ✓ Used for CSV bulk upload calculations
+                    ✓ Registration = Referral count increases
+                  </p>
+                  <p className="text-xs text-gray-700 font-semibold">
+                    ✓ Premium purchase = Referrer gets points
                   </p>
                   <p className="text-xs text-green-700 mt-2 bg-green-100 p-2 rounded">
-                    <strong>Example:</strong> If you set 50 points and upload CSV showing an ambassador got 3 new referrals, they will receive 150 points (3 × 50)
+                    <strong>Example:</strong> User A refers User B. User B registers (A's referral count +1, but no points yet). User B buys premium → User A gets {referralSettings.pointsPerReferral} points + {referralSettings.bonusForPremiumReferral} bonus = {referralSettings.pointsPerReferral + referralSettings.bonusForPremiumReferral} total points.
                   </p>
                 </div>
               </div>
@@ -356,15 +397,19 @@ const AdminPremiumSettings = () => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-600 font-bold">2.</span>
-                <span>New user enters code during registration</span>
+                <span>New user enters code during registration → <strong>Referral count increases</strong></span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-600 font-bold">3.</span>
-                <span>Referrer earns {referralSettings.pointsPerReferral} points for each successful registration</span>
+                <span>When referred user <strong>purchases premium</strong> → Referrer earns {referralSettings.pointsPerReferral} points</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-600 font-bold">4.</span>
-                <span>If referred user becomes premium, referrer gets +{referralSettings.bonusForPremiumReferral} bonus points</span>
+                <span>Plus additional +{referralSettings.bonusForPremiumReferral} bonus points for premium referral</span>
+              </li>
+              <li className="flex items-start gap-2 bg-yellow-100 p-2 rounded">
+                <span className="text-orange-600 font-bold">⚠️</span>
+                <span className="text-orange-800"><strong>Important:</strong> Points are awarded only when the referred user buys premium, not at registration.</span>
               </li>
             </ul>
           </div>
@@ -376,11 +421,11 @@ const AdminPremiumSettings = () => {
               <div>
                 <h3 className="font-bold text-gray-800 mb-2">Bulk Update via CSV</h3>
                 <p className="text-sm text-gray-700 mb-2">
-                  You can update referral counts and points in bulk by uploading a CSV file from the Ambassador Dashboard.
+                  You can update referral counts in bulk by uploading a CSV file from the Ambassador Dashboard.
                 </p>
                 <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                  <li>Points per referral setting ({referralSettings.pointsPerReferral} points) will be used for calculations</li>
-                  <li>Only new referrals (increments) will add points to ambassadors</li>
+                  <li>CSV updates referral counts from Shopify data</li>
+                  <li><strong>Points are awarded only when referred users purchase premium</strong></li>
                   <li>CSV format: uniqueCode, referralCount</li>
                 </ul>
               </div>
@@ -399,6 +444,205 @@ const AdminPremiumSettings = () => {
             </button>
           </div>
         </div>
+        )}
+
+        {activeTab === 'popup' && (
+          <div className="space-y-6">
+            {/* WhatsApp Link */}
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <MessageCircle className="w-6 h-6 text-green-500" />
+                <h2 className="text-xl font-bold text-gray-800">WhatsApp Group Link</h2>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WhatsApp Group Invite Link
+                </label>
+                <input
+                  type="url"
+                  value={popupSettings.whatsappLink}
+                  onChange={(e) => setPopupSettings({ ...popupSettings, whatsappLink: e.target.value })}
+                  className="input-field w-full"
+                  placeholder="https://chat.whatsapp.com/your-group-link"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Paste your WhatsApp group invite link here
+                </p>
+              </div>
+            </div>
+
+            {/* Popup Content */}
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Settings className="w-6 h-6 text-primary-500" />
+                <h2 className="text-xl font-bold text-gray-800">Popup Content</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Popup Title
+                  </label>
+                  <input
+                    type="text"
+                    value={popupSettings.title}
+                    onChange={(e) => setPopupSettings({ ...popupSettings, title: e.target.value })}
+                    className="input-field w-full"
+                    placeholder="Join Our Community! 🎉"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Popup Message
+                  </label>
+                  <textarea
+                    value={popupSettings.message}
+                    onChange={(e) => setPopupSettings({ ...popupSettings, message: e.target.value })}
+                    className="input-field w-full"
+                    rows={3}
+                    placeholder="Connect with fellow ambassadors..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={popupSettings.buttonText}
+                    onChange={(e) => setPopupSettings({ ...popupSettings, buttonText: e.target.value })}
+                    className="input-field w-full"
+                    placeholder="Join WhatsApp Group"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Popup Timing */}
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Calendar className="w-6 h-6 text-primary-500" />
+                <h2 className="text-xl font-bold text-gray-800">Popup Timing</h2>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Show After (seconds)
+                </label>
+                <input
+                  type="number"
+                  value={popupSettings.showAfterSeconds}
+                  onChange={(e) => setPopupSettings({ ...popupSettings, showAfterSeconds: parseInt(e.target.value) })}
+                  className="input-field w-full"
+                  min="0"
+                  max="60"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  How many seconds to wait before showing the popup (0 = immediately)
+                </p>
+              </div>
+            </div>
+
+            {/* Popup Display Settings */}
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Sparkles className="w-6 h-6 text-primary-500" />
+                <h2 className="text-xl font-bold text-gray-800">Display Settings</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Popup Enabled</h3>
+                    <p className="text-sm text-gray-600">Master switch for the popup</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={popupSettings.enabled}
+                      onChange={(e) => setPopupSettings({ ...popupSettings, enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Show on Login</h3>
+                    <p className="text-sm text-gray-600">Display popup after user logs in</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={popupSettings.showOnLogin}
+                      onChange={(e) => setPopupSettings({ ...popupSettings, showOnLogin: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Show on Register</h3>
+                    <p className="text-sm text-gray-600">Display popup after user registers</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={popupSettings.showOnRegister}
+                      onChange={(e) => setPopupSettings({ ...popupSettings, showOnRegister: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Show on Dashboard</h3>
+                    <p className="text-sm text-gray-600">Display popup when visiting dashboard</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={popupSettings.showOnDashboard}
+                      onChange={(e) => setPopupSettings({ ...popupSettings, showOnDashboard: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="glass-card p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+              <h3 className="font-semibold text-gray-800 mb-4">📱 Popup Preview</h3>
+              <div className="bg-white rounded-xl p-6 shadow-lg border max-w-sm mx-auto">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle className="w-8 h-8 text-white" />
+                  </div>
+                  <h4 className="text-xl font-bold text-gray-800 mb-2">{popupSettings.title || 'Join Our Community!'}</h4>
+                  <p className="text-gray-600 mb-4">{popupSettings.message || 'Connect with fellow ambassadors...'}</p>
+                  <button className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold">
+                    {popupSettings.buttonText || 'Join WhatsApp Group'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSavePopupSettings}
+                disabled={saving}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Popup Settings'}
+              </button>
+            </div>
+          </div>
         )}
       </motion.div>
     </div>

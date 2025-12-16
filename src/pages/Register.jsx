@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Mail, Lock, User, Phone, GraduationCap, Hash, Eye, EyeOff, Upload, X, Search } from 'lucide-react';
 import AvatarSelector from '../components/AvatarSelector';
-import axios from 'axios';
+import WhatsAppPopup from '../components/WhatsAppPopup';
+import * as XLSX from 'xlsx';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -28,54 +29,129 @@ const Register = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [useCustomImage, setUseCustomImage] = useState(false);
   
-  // University autocomplete state
-  const [universities, setUniversities] = useState([]);
+  // College autocomplete state (local data)
+  const [allColleges, setAllColleges] = useState([]);
+  const [filteredColleges, setFilteredColleges] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loadingUniversities, setLoadingUniversities] = useState(false);
-  const universityInputRef = useRef(null);
+  const [loadingColleges, setLoadingColleges] = useState(true);
+  const collegeInputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // Fetch universities from API with debounce
+  // Load colleges from Excel file on mount
   useEffect(() => {
-    const searchUniversities = async () => {
-      if (formData.collegeName.length < 2) {
-        setUniversities([]);
-        setShowSuggestions(false);
-        return;
-      }
-
-      setLoadingUniversities(true);
+    const loadColleges = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/auth/universities?name=${encodeURIComponent(formData.collegeName)}`
-        );
+        const response = await fetch('/datafile1.xls');
+        const arrayBuffer = await response.arrayBuffer();
         
-        // Filter and limit results
-        const filteredUniversities = response.data
-          .slice(0, 15) // Limit to 15 results
-          .map(uni => ({
-            name: uni.name,
-            country: uni.country,
-            stateProvince: uni['state-province']
-          }));
+        // Parse Excel file
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
         
-        setUniversities(filteredUniversities);
-        setShowSuggestions(filteredUniversities.length > 0);
+        // Skip header row and parse data
+        const colleges = data
+          .slice(1) // Skip header row
+          .filter(row => row[0]) // Only rows with college name
+          .map(row => ({
+            name: row[0]?.toString().trim() || '',
+            state: row[1]?.toString().trim() || ''
+          }))
+          .filter(college => college.name);
+        
+        setAllColleges(colleges);
+        setLoadingColleges(false);
       } catch (error) {
-        console.error('Error fetching universities:', error);
-        setUniversities([]);
-      } finally {
-        setLoadingUniversities(false);
+        console.error('Error loading colleges:', error);
+        toast.error('Failed to load college data');
+        setLoadingColleges(false);
       }
     };
+    
+    loadColleges();
+  }, []);
 
-    const debounceTimer = setTimeout(searchUniversities, 150);
-    return () => clearTimeout(debounceTimer);
-  }, [formData.collegeName]);
+  // Filter colleges based on input
+  useEffect(() => {
+    if (formData.collegeName.length < 2) {
+      setFilteredColleges([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const searchTerm = formData.collegeName.toLowerCase();
+    
+    // Fuzzy matching function - calculates similarity score
+    const fuzzyMatch = (str, pattern) => {
+      str = str.toLowerCase();
+      pattern = pattern.toLowerCase();
+      
+      // Exact match or contains - highest priority
+      if (str.includes(pattern)) {
+        return 100;
+      }
+      
+      // Calculate Levenshtein distance for fuzzy matching
+      const getDistance = (a, b) => {
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) {
+          matrix[i] = [i];
+        }
+        for (let j = 0; j <= a.length; j++) {
+          matrix[0][j] = j;
+        }
+        for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+              matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+              matrix[i][j] = Math.min(
+                matrix[i - 1][j - 1] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j] + 1
+              );
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      };
+      
+      // Check if words in pattern match words in string
+      const patternWords = pattern.split(' ');
+      const strWords = str.split(' ');
+      let matchScore = 0;
+      
+      for (const pWord of patternWords) {
+        let bestMatch = Infinity;
+        for (const sWord of strWords) {
+          const distance = getDistance(pWord, sWord);
+          bestMatch = Math.min(bestMatch, distance);
+        }
+        // If distance is small relative to word length, consider it a match
+        if (bestMatch <= Math.max(2, pWord.length * 0.3)) {
+          matchScore += 50;
+        }
+      }
+      
+      return matchScore;
+    };
+    
+    // Filter and score colleges
+    const scoredColleges = allColleges
+      .map(college => ({
+        ...college,
+        score: Math.max(
+          fuzzyMatch(college.name, searchTerm),
+          fuzzyMatch(college.state, searchTerm) * 0.5 // State matches count less
+        )
+      }))
+      .filter(college => college.score > 30) // Minimum threshold
+      .sort((a, b) => b.score - a.score) // Sort by score
+      .slice(0, 15); // Limit to 15 results
+    
+    setFilteredColleges(scoredColleges);
+    setShowSuggestions(scoredColleges.length > 0);
+  }, [formData.collegeName, allColleges]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -83,8 +159,8 @@ const Register = () => {
       if (
         suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target) &&
-        universityInputRef.current &&
-        !universityInputRef.current.contains(event.target)
+        collegeInputRef.current &&
+        !collegeInputRef.current.contains(event.target)
       ) {
         setShowSuggestions(false);
       }
@@ -94,8 +170,12 @@ const Register = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectUniversity = (universityName) => {
-    setFormData({ ...formData, collegeName: universityName });
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const selectCollege = (collegeName) => {
+    setFormData({ ...formData, collegeName: collegeName });
     setShowSuggestions(false);
   };
 
@@ -337,25 +417,25 @@ const Register = () => {
             <div className="relative">
               <GraduationCap className="absolute left-3 top-3 w-5 h-5 text-gray-400 z-10" />
               <input
-                ref={universityInputRef}
+                ref={collegeInputRef}
                 type="text"
                 name="collegeName"
                 value={formData.collegeName}
                 onChange={handleChange}
-                onFocus={() => formData.collegeName.length >= 2 && universities.length > 0 && setShowSuggestions(true)}
+                onFocus={() => formData.collegeName.length >= 2 && filteredColleges.length > 0 && setShowSuggestions(true)}
                 className="input-field pl-10 pr-10"
-                placeholder="Start typing your university name..."
+                placeholder="Start typing your college name..."
                 required
                 autoComplete="off"
               />
-              {loadingUniversities && (
+              {loadingColleges && (
                 <Search className="absolute right-3 top-3 w-5 h-5 text-primary-500 animate-pulse" />
               )}
             </div>
             
-            {/* University Suggestions Dropdown */}
+            {/* College Suggestions Dropdown */}
             <AnimatePresence>
-              {showSuggestions && universities.length > 0 && (
+              {showSuggestions && filteredColleges.length > 0 && (
                 <motion.div
                   ref={suggestionsRef}
                   initial={{ opacity: 0, y: -10 }}
@@ -363,16 +443,16 @@ const Register = () => {
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
                 >
-                  {universities.map((uni, index) => (
+                  {filteredColleges.map((college, index) => (
                     <button
                       key={index}
                       type="button"
-                      onClick={() => selectUniversity(uni.name)}
+                      onClick={() => selectCollege(college.name)}
                       className="w-full text-left px-4 py-3 hover:bg-primary-50 transition-colors border-b border-gray-100 last:border-b-0 focus:bg-primary-50 focus:outline-none"
                     >
-                      <div className="font-medium text-gray-800">{uni.name}</div>
+                      <div className="font-medium text-gray-800">{college.name}</div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {uni.stateProvince && `${uni.stateProvince}, `}{uni.country}
+                        {college.state}
                       </div>
                     </button>
                   ))}
@@ -489,6 +569,9 @@ const Register = () => {
           </p>
         </div>
       </motion.div>
+
+      {/* WhatsApp Popup */}
+      <WhatsAppPopup trigger="register" />
     </div>
   );
 };

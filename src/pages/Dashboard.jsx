@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Target, Award, Copy, Check, Lock, AlertCircle } from 'lucide-react';
+import { TrendingUp, Target, Award, Copy, Check, Lock, AlertCircle, MessageCircle } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo, copyToClipboard } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
+import WhatsAppPopup from '../components/WhatsAppPopup';
 
 const Dashboard = () => {
   const { demoMode, user } = useAuth();
@@ -13,8 +14,22 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [copiedTask, setCopiedTask] = useState(null);
   const [codeApproved, setCodeApproved] = useState(false);
+  const [whatsappLink, setWhatsappLink] = useState(null);
 
   useEffect(() => {
+    // Fetch WhatsApp link from popup settings
+    const fetchPopupSettings = async () => {
+      try {
+        const res = await api.get('/premium/popup-settings');
+        if (res.data.success && res.data.settings.whatsappLink) {
+          setWhatsappLink(res.data.settings.whatsappLink);
+        }
+      } catch (error) {
+        console.log('Could not fetch popup settings');
+      }
+    };
+    fetchPopupSettings();
+
     if (demoMode) {
       // Load demo data
       const ambassadorCode = user.uniqueCode;
@@ -393,7 +408,42 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
             </div>
           )}
         </motion.div>
+
+        {/* WhatsApp Join Button */}
+        {whatsappLink && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8"
+          >
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass-card p-6 flex items-center justify-between hover:bg-green-500/10 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-500/20 rounded-xl">
+                  <MessageCircle className="w-8 h-8 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">
+                    Join Our WhatsApp Community
+                  </h3>
+                  <p className="text-gray-400">Connect with fellow ambassadors, get tips & exclusive updates!</p>
+                </div>
+              </div>
+              <div className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors">
+                Join Now
+              </div>
+            </a>
+          </motion.div>
+        )}
       </motion.div>
+
+      {/* WhatsApp Popup */}
+      <WhatsAppPopup trigger="dashboard" />
     </div>
   );
 };
