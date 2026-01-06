@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -10,6 +10,8 @@ import * as XLSX from 'xlsx';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const plan = searchParams.get('plan');
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -19,7 +21,7 @@ const Register = () => {
     age: '',
     collegeName: '',
     phoneNumber: '',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+    avatar: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Felix',
     profileImage: null,
     referralCode: '',
   });
@@ -28,7 +30,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [useCustomImage, setUseCustomImage] = useState(false);
-  
+
   // College autocomplete state (local data)
   const [allColleges, setAllColleges] = useState([]);
   const [filteredColleges, setFilteredColleges] = useState([]);
@@ -43,12 +45,12 @@ const Register = () => {
       try {
         const response = await fetch('/datafile1.xls');
         const arrayBuffer = await response.arrayBuffer();
-        
+
         // Parse Excel file
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-        
+
         // Skip header row and parse data
         const colleges = data
           .slice(1) // Skip header row
@@ -58,7 +60,7 @@ const Register = () => {
             state: row[1]?.toString().trim() || ''
           }))
           .filter(college => college.name);
-        
+
         setAllColleges(colleges);
         setLoadingColleges(false);
       } catch (error) {
@@ -67,91 +69,42 @@ const Register = () => {
         setLoadingColleges(false);
       }
     };
-    
+
     loadColleges();
   }, []);
 
-  // Filter colleges based on input
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce the search input
   useEffect(() => {
-    if (formData.collegeName.length < 2) {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(formData.collegeName);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [formData.collegeName]);
+
+  // Optimized filter logic
+  useEffect(() => {
+    if (debouncedSearchTerm.length < 2) {
       setFilteredColleges([]);
       setShowSuggestions(false);
       return;
     }
 
-    const searchTerm = formData.collegeName.toLowerCase();
-    
-    // Fuzzy matching function - calculates similarity score
-    const fuzzyMatch = (str, pattern) => {
-      str = str.toLowerCase();
-      pattern = pattern.toLowerCase();
-      
-      // Exact match or contains - highest priority
-      if (str.includes(pattern)) {
-        return 100;
-      }
-      
-      // Calculate Levenshtein distance for fuzzy matching
-      const getDistance = (a, b) => {
-        const matrix = [];
-        for (let i = 0; i <= b.length; i++) {
-          matrix[i] = [i];
-        }
-        for (let j = 0; j <= a.length; j++) {
-          matrix[0][j] = j;
-        }
-        for (let i = 1; i <= b.length; i++) {
-          for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-              matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-              matrix[i][j] = Math.min(
-                matrix[i - 1][j - 1] + 1,
-                matrix[i][j - 1] + 1,
-                matrix[i - 1][j] + 1
-              );
-            }
-          }
-        }
-        return matrix[b.length][a.length];
-      };
-      
-      // Check if words in pattern match words in string
-      const patternWords = pattern.split(' ');
-      const strWords = str.split(' ');
-      let matchScore = 0;
-      
-      for (const pWord of patternWords) {
-        let bestMatch = Infinity;
-        for (const sWord of strWords) {
-          const distance = getDistance(pWord, sWord);
-          bestMatch = Math.min(bestMatch, distance);
-        }
-        // If distance is small relative to word length, consider it a match
-        if (bestMatch <= Math.max(2, pWord.length * 0.3)) {
-          matchScore += 50;
-        }
-      }
-      
-      return matchScore;
-    };
-    
-    // Filter and score colleges
-    const scoredColleges = allColleges
-      .map(college => ({
-        ...college,
-        score: Math.max(
-          fuzzyMatch(college.name, searchTerm),
-          fuzzyMatch(college.state, searchTerm) * 0.5 // State matches count less
-        )
-      }))
-      .filter(college => college.score > 30) // Minimum threshold
-      .sort((a, b) => b.score - a.score) // Sort by score
-      .slice(0, 15); // Limit to 15 results
-    
-    setFilteredColleges(scoredColleges);
-    setShowSuggestions(scoredColleges.length > 0);
-  }, [formData.collegeName, allColleges]);
+    const searchTerm = debouncedSearchTerm.toLowerCase();
+
+    // Simple, performant filter instead of heavy fuzzy matching
+    // Using simple includes check to prevent main thread blocking
+    const filtered = allColleges
+      .filter(college =>
+        college.name.toLowerCase().includes(searchTerm) ||
+        college.state.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 15);
+
+    setFilteredColleges(filtered);
+    setShowSuggestions(filtered.length > 0);
+  }, [debouncedSearchTerm, allColleges]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -202,12 +155,12 @@ const Register = () => {
           // Create canvas for compression
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          
+
           // Calculate new dimensions (max 800x800)
           let width = img.width;
           let height = img.height;
           const maxSize = 800;
-          
+
           if (width > height && width > maxSize) {
             height = (height / width) * maxSize;
             width = maxSize;
@@ -215,14 +168,14 @@ const Register = () => {
             width = (width / height) * maxSize;
             height = maxSize;
           }
-          
+
           canvas.width = width;
           canvas.height = height;
-          
+
           // Draw and compress
           ctx.drawImage(img, 0, 0, width, height);
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          
+
           setImagePreview(compressedBase64);
           setFormData({ ...formData, profileImage: compressedBase64 });
           setUseCustomImage(true);
@@ -241,7 +194,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (formData.phoneNumber.length !== 10 || !/^\d{10}$/.test(formData.phoneNumber)) {
       toast.error('Phone number must be exactly 10 digits');
@@ -274,7 +227,11 @@ const Register = () => {
 
     if (result.success) {
       toast.success('Registration successful! Welcome aboard! 🎉');
-      navigate('/premium-upgrade');
+      if (plan === 'free') {
+        navigate('/dashboard');
+      } else {
+        navigate('/premium-upgrade');
+      }
     } else {
       toast.error(result.message);
     }
@@ -293,15 +250,15 @@ const Register = () => {
             animate={{ scale: 1, opacity: 1 }}
             className="mb-4 flex items-center justify-center gap-3"
           >
-            <img 
-              src="/StuCare's TM.png" 
-              alt="Stucare" 
+            <img
+              src="/StuCare's TM.png"
+              alt="Stucare"
               className="h-10 w-auto"
             />
             <span className="text-2xl font-bold text-gray-400">×</span>
-            <img 
-              src="/3048_Scholare_HK-JPG-01__1_-removebg-preview.png" 
-              alt="Scholare" 
+            <img
+              src="/3048_Scholare_HK-JPG-01__1_-removebg-preview.png"
+              alt="Scholare"
               className="h-10 w-auto"
             />
           </motion.div>
@@ -314,7 +271,7 @@ const Register = () => {
           <div className="space-y-4">
             {!useCustomImage ? (
               <>
-                <AvatarSelector 
+                <AvatarSelector
                   selectedAvatar={formData.avatar}
                   onSelect={(avatar) => setFormData({ ...formData, avatar })}
                 />
@@ -359,7 +316,7 @@ const Register = () => {
               </div>
             )}
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">Full Name</label>
@@ -432,7 +389,7 @@ const Register = () => {
                 <Search className="absolute right-3 top-3 w-5 h-5 text-primary-500 animate-pulse" />
               )}
             </div>
-            
+
             {/* College Suggestions Dropdown */}
             <AnimatePresence>
               {showSuggestions && filteredColleges.length > 0 && (

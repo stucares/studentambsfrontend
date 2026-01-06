@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  BadgeCheck, 
-  Gift, 
-  Zap, 
+import {
+  BadgeCheck,
+  Gift,
+  Zap,
   Calendar,
   Star,
   CheckCircle,
@@ -73,11 +73,11 @@ const PremiumUpgrade = () => {
       toast.error('Settings not loaded yet');
       return;
     }
-    
+
     setLoading(true);
     try {
       const planAmount = selectedPlan === 'lifetime' ? settings.lifetimePrice : settings.premiumPrice;
-      
+
       // Create order on backend
       const response = await api.post('/payment/create-order', {
         amount: planAmount,
@@ -86,7 +86,7 @@ const PremiumUpgrade = () => {
 
       if (response.data.success && response.data.paymentSessionId) {
         const { paymentSessionId, environment } = response.data;
-        
+
         // Load Cashfree SDK dynamically
         const script = document.createElement('script');
         script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
@@ -95,14 +95,14 @@ const PremiumUpgrade = () => {
           const cashfree = window.Cashfree({
             mode: environment === 'production' ? 'production' : 'sandbox'
           });
-          
+
           // Checkout options
           const checkoutOptions = {
             paymentSessionId: paymentSessionId,
             returnUrl: `${window.location.origin}/payment-success?order_id=${response.data.orderId}`,
             redirectTarget: '_self'
           };
-          
+
           // Initiate payment
           cashfree.checkout(checkoutOptions).then((result) => {
             if (result.error) {
@@ -115,12 +115,12 @@ const PremiumUpgrade = () => {
             }
           });
         };
-        
+
         script.onerror = () => {
           toast.error('Failed to load payment gateway');
           setLoading(false);
         };
-        
+
         document.body.appendChild(script);
       } else {
         toast.error('Failed to create payment order');
@@ -156,7 +156,7 @@ const PremiumUpgrade = () => {
     { icon: Gift, title: 'Welcome Kit', description: 'Receive branded merchandise delivered to you', color: 'from-pink-500 to-rose-500' },
     { icon: TrendingUp, title: '2x Points', description: 'Earn double points on all referrals', color: 'from-green-500 to-emerald-500' },
     { icon: Calendar, title: 'Personal Onboarding', description: 'Scheduled call with our success team', color: 'from-purple-500 to-violet-500' },
-    { icon: Shield, title: 'Money Back', description: 'Get ₹19 back after completing 1 task', color: 'from-primary-500 to-primary-600' },
+    { icon: Shield, title: 'Satisfaction Guaranteed', description: 'Experience premium value immediately', color: 'from-primary-500 to-primary-600' },
   ];
 
   return (
@@ -233,11 +233,10 @@ const PremiumUpgrade = () => {
             <motion.div
               whileHover={{ scale: 1.02 }}
               onClick={() => setSelectedPlan('monthly')}
-              className={`bg-gray-50 rounded-xl p-6 cursor-pointer transition-all ${
-                selectedPlan === 'monthly' 
-                  ? 'ring-2 ring-primary-500 bg-primary-50' 
-                  : 'hover:bg-gray-100'
-              }`}
+              className={`bg-gray-50 rounded-xl p-6 cursor-pointer transition-all ${selectedPlan === 'monthly'
+                ? 'ring-2 ring-primary-500 bg-primary-50'
+                : 'hover:bg-gray-100'
+                }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -248,11 +247,10 @@ const PremiumUpgrade = () => {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">per month</p>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  selectedPlan === 'monthly' 
-                    ? 'border-primary-500 bg-primary-500' 
-                    : 'border-gray-300'
-                }`}>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'monthly'
+                  ? 'border-primary-500 bg-primary-500'
+                  : 'border-gray-300'
+                  }`}>
                   {selectedPlan === 'monthly' && (
                     <CheckCircle className="w-4 h-4 text-white" />
                   )}
@@ -260,7 +258,7 @@ const PremiumUpgrade = () => {
               </div>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-center">
                 <p className="text-yellow-800 text-xs font-medium">
-                  💰 Money back after 1 task!
+                  💎 Unlock exclusive rewards instantly!
                 </p>
               </div>
             </motion.div>
@@ -269,11 +267,10 @@ const PremiumUpgrade = () => {
             <motion.div
               whileHover={{ scale: 1.02 }}
               onClick={() => setSelectedPlan('lifetime')}
-              className={`relative bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 cursor-pointer transition-all border-2 ${
-                selectedPlan === 'lifetime' 
-                  ? 'border-purple-500 shadow-lg' 
-                  : 'border-purple-200 hover:border-purple-300'
-              }`}
+              className={`relative bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 cursor-pointer transition-all border-2 ${selectedPlan === 'lifetime'
+                ? 'border-purple-500 shadow-lg'
+                : 'border-purple-200 hover:border-purple-300'
+                }`}
             >
               <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">
                 BEST VALUE
@@ -287,11 +284,10 @@ const PremiumUpgrade = () => {
                   </div>
                   <p className="text-xs text-purple-600 mt-1 font-medium">One-time payment</p>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  selectedPlan === 'lifetime' 
-                    ? 'border-purple-500 bg-purple-500' 
-                    : 'border-purple-300'
-                }`}>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'lifetime'
+                  ? 'border-purple-500 bg-purple-500'
+                  : 'border-purple-300'
+                  }`}>
                   {selectedPlan === 'lifetime' && (
                     <CheckCircle className="w-4 h-4 text-white" />
                   )}
@@ -344,11 +340,10 @@ const PremiumUpgrade = () => {
             <button
               onClick={handleUpgrade}
               disabled={loading}
-              className={`w-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
-                selectedPlan === 'lifetime'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                  : 'btn-primary'
-              } text-white rounded-xl font-bold transition-all`}
+              className={`w-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-50 ${selectedPlan === 'lifetime'
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                : 'btn-primary'
+                } text-white rounded-xl font-bold transition-all`}
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
@@ -360,12 +355,12 @@ const PremiumUpgrade = () => {
                 </>
               )}
             </button>
-            
+
             <button
               onClick={handleSkip}
-              className="w-full py-3 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+              className="w-full py-4 text-gray-700 font-semibold bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-xl transition-all flex items-center justify-center gap-2"
             >
-              Skip for now, I'll continue as free ambassador
+              <span>Continue as Free Ambassador</span>
             </button>
           </div>
 
@@ -378,7 +373,7 @@ const PremiumUpgrade = () => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5" />
-                <span>100% Money Back</span>
+                <span>Satisfaction Guaranteed</span>
               </div>
               <div className="flex items-center gap-2">
                 <Star className="w-5 h-5" />
@@ -406,10 +401,10 @@ const PremiumUpgrade = () => {
                 ))}
               </div>
               <p className="text-gray-700 mb-2">
-                "I was hesitant about the ₹19, but got it back after my first task! 
-                Now I'm earning ₹5000+ monthly with premium benefits."
+                "I was hesitant about upgrading, but the premium tools were worth it!
+                Now I'm unlocking exclusive rewards and growing my network every month."
               </p>
-              <p className="text-primary-700 font-medium">Rohit Sharma, Mumbai</p>
+              <p className="text-primary-700 font-medium">Rohit S., Mumbai</p>
             </div>
           </div>
         </motion.div>

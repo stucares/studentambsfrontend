@@ -81,7 +81,7 @@ const AdminDashboard = () => {
       try {
         const text = e.target.result;
         const lines = text.split('\n').filter(line => line.trim());
-        
+
         if (lines.length < 2) {
           toast.error('CSV file is empty or invalid');
           return;
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
           headers.forEach((header, index) => {
             row[header] = values[index]?.trim();
           });
-          
+
           if (row.uniquecode && row.referralcount) {
             data.push({
               uniqueCode: row.uniquecode,
@@ -142,6 +142,39 @@ const AdminDashboard = () => {
       toast.error('Failed to update ambassadors');
     } finally {
       setUploadingCSV(false);
+    }
+  };
+
+  const handleDownloadNewCodes = async () => {
+    try {
+      const res = await api.get('/admin/ambassadors/download-new-codes');
+
+      if (res.data.data.length === 0) {
+        toast.success(res.data.message);
+        return;
+      }
+
+      // Convert to CSV
+      const headers = ['Name', 'Unique Code'];
+      const csvContent = [
+        headers.join(','),
+        ...res.data.data.map(row => `${row.name},${row.uniqueCode}`)
+      ].join('\n');
+
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `new_unique_codes_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error('Failed to download codes');
     }
   };
 
@@ -240,7 +273,7 @@ const AdminDashboard = () => {
 
   const handleDeleteTask = async (taskId) => {
     if (!confirm('Are you sure you want to delete this task?')) return;
-    
+
     try {
       await api.delete(`/admin/tasks/${taskId}`);
       toast.success('Task deleted successfully');
@@ -248,6 +281,58 @@ const AdminDashboard = () => {
     } catch (error) {
       toast.error('Failed to delete task');
     }
+  };
+
+  // CSV Export Function
+  const exportToCSV = () => {
+    // CSV Headers
+    const headers = [
+      'Name',
+      'Email',
+      'Status',
+      'Referrals',
+      'Points',
+      'Joined Date',
+      'College',
+      'Phone',
+      'Unique Code',
+      'Level'
+    ];
+
+    // Convert ambassadors to CSV rows
+    const rows = ambassadors.map(ambassador => [
+      ambassador.name || '',
+      ambassador.email || '',
+      ambassador.isActive ? 'Active' : 'Inactive',
+      ambassador.referralCount || 0,
+      ambassador.creditPoints || 0,
+      new Date(ambassador.createdAt).toLocaleDateString(),
+      ambassador.collegeName || '',
+      ambassador.phoneNumber || '',
+      ambassador.uniqueCode || '',
+      ambassador.level || 'Rookie'
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Create blob and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ambassadors_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(`Exported ${ambassadors.length} ambassadors to CSV`);
   };
 
   if (loading) {
@@ -352,6 +437,7 @@ const AdminDashboard = () => {
           </motion.div>
         </div>
 
+
         {/* Tasks Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
@@ -405,9 +491,8 @@ const AdminDashboard = () => {
                   <p className="text-sm font-mono">{task.messageTemplate}</p>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    task.isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${task.isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                    }`}>
                     {task.isActive ? 'Active' : 'Inactive'}
                   </span>
                   <span className="text-sm font-bold text-yellow-400">+{task.pointsReward} pts</span>
@@ -457,6 +542,14 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               {/* CSV Upload and Download Buttons */}
               <div className="flex gap-2">
+                <button
+                  onClick={handleDownloadNewCodes}
+                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
+                  title="Download new unique codes"
+                >
+                  <Download className="w-4 h-4" />
+                  New Codes
+                </button>
                 <button
                   onClick={handleDownloadSample}
                   className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
@@ -512,15 +605,22 @@ const AdminDashboard = () => {
                 )}
               </div>
             </div>
+            <button
+              onClick={exportToCSV}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              Export CSV
+            </button>
           </div>
-          
+
           {/* Search Results Summary */}
           {searchQuery && (
             <div className="mb-3 text-sm text-gray-600 font-medium">
               Found {filteredAmbassadors.length} ambassador{filteredAmbassadors.length !== 1 ? 's' : ''} matching "{searchQuery}"
             </div>
           )}
-          
+
           <div className="glass-card overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -540,76 +640,74 @@ const AdminDashboard = () => {
               <tbody>
                 {paginatedAmbassadors.length > 0 ? (
                   paginatedAmbassadors.map((ambassador) => (
-                  <tr key={ambassador.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{ambassador.name}</span>
-                        {ambassador.isPremium && (
-                          <span className="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold">
-                            ⭐ VIP
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm text-gray-400">{ambassador.email}</td>
-                    <td className="p-4 text-sm">{ambassador.collegeName}</td>
-                    <td className="p-4">
-                      <span className="px-3 py-1 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full text-xs font-bold">
-                        {ambassador.level}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className="font-mono text-sm">{ambassador.uniqueCode}</span>
-                    </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => handleApproveCode(ambassador.id, !ambassador.uniqueCodeApproved)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                          ambassador.uniqueCodeApproved
+                    <tr key={ambassador.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{ambassador.name}</span>
+                          {ambassador.isPremium && (
+                            <span className="bg-purple-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+                              ⭐ VIP
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm text-gray-400">{ambassador.email}</td>
+                      <td className="p-4 text-sm">{ambassador.collegeName}</td>
+                      <td className="p-4">
+                        <span className="px-3 py-1 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full text-xs font-bold">
+                          {ambassador.level}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className="font-mono text-sm">{ambassador.uniqueCode}</span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleApproveCode(ambassador.id, !ambassador.uniqueCodeApproved)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${ambassador.uniqueCodeApproved
                             ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
                             : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                        }`}
-                      >
-                        {ambassador.uniqueCodeApproved ? '✓ Approved' : '⏳ Pending'}
-                      </button>
-                    </td>
-                    <td className="p-4 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="font-bold text-lg">
-                          <span className="text-green-400">{ambassador.premiumReferrals || 0}</span>
-                          <span className="text-gray-400">/</span>
-                          <span className="text-blue-400">{ambassador.totalReferrals || ambassador.referralCount}</span>
-                        </span>
-                        {ambassador.pendingReferrals > 0 && (
-                          <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded">
-                            {ambassador.pendingReferrals} pending
+                            }`}
+                        >
+                          {ambassador.uniqueCodeApproved ? '✓ Approved' : '⏳ Pending'}
+                        </button>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-bold text-lg">
+                            <span className="text-green-400">{ambassador.premiumReferrals || 0}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-blue-400">{ambassador.totalReferrals || ambassador.referralCount}</span>
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-center font-bold">{ambassador.creditPoints}</td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => handleToggleStatus(ambassador.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          ambassador.isActive
+                          {ambassador.pendingReferrals > 0 && (
+                            <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded">
+                              {ambassador.pendingReferrals} pending
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-center font-bold">{ambassador.creditPoints}</td>
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleToggleStatus(ambassador.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${ambassador.isActive
                             ? 'bg-green-500/20 text-green-400'
                             : 'bg-red-500/20 text-red-400'
-                        }`}
-                      >
-                        {ambassador.isActive ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => setEditingAmbassador(ambassador)}
-                        className="btn-secondary py-2 px-4 text-sm"
-                      >
-                        Edit Stats
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                            }`}
+                        >
+                          {ambassador.isActive ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => setEditingAmbassador(ambassador)}
+                          className="btn-secondary py-2 px-4 text-sm"
+                        >
+                          Edit Stats
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 ) : (
                   <tr>
                     <td colSpan="10" className="p-8 text-center">
@@ -640,11 +738,10 @@ const AdminDashboard = () => {
                 <button
                   onClick={handlePrevPage}
                   disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    currentPage === 1
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-primary-500 text-white hover:bg-primary-600'
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${currentPage === 1
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-primary-500 text-white hover:bg-primary-600'
+                    }`}
                 >
                   Previous
                 </button>
@@ -656,11 +753,10 @@ const AdminDashboard = () => {
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    currentPage === totalPages
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-primary-500 text-white hover:bg-primary-600'
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${currentPage === totalPages
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-primary-500 text-white hover:bg-primary-600'
+                    }`}
                 >
                   Next
                 </button>
@@ -710,18 +806,18 @@ const AdminDashboard = () => {
               className="glass-card p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             >
               <h2 className="text-2xl font-bold mb-4 gradient-text">Confirm CSV Upload</h2>
-              
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
-              <p className="text-sm text-blue-300 mb-2">
-                <strong>Ready to update {csvData.length} ambassador(s)</strong>
-              </p>
-              <p className="text-xs text-gray-400 mb-2">
-                This will update referral counts from your Shopify data.
-              </p>
-              <p className="text-xs text-purple-300 bg-purple-500/20 p-2 rounded">
-                💡 <strong>Note:</strong> Points ({referralSettings.pointsPerReferral || 50} per referral + {referralSettings.bonusForPremiumReferral || 100} bonus) are awarded automatically when referred users purchase premium, not during CSV upload.
-              </p>
-            </div>              <div className="bg-white/5 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-300 mb-2">
+                  <strong>Ready to update {csvData.length} ambassador(s)</strong>
+                </p>
+                <p className="text-xs text-gray-400 mb-2">
+                  This will update referral counts from your Shopify data.
+                </p>
+                <p className="text-xs text-purple-300 bg-purple-500/20 p-2 rounded">
+                  💡 <strong>Note:</strong> Points ({referralSettings.pointsPerReferral || 50} per referral + {referralSettings.bonusForPremiumReferral || 100} bonus) are awarded automatically when referred users purchase premium, not during CSV upload.
+                </p>
+              </div>              <div className="bg-white/5 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
                 <h3 className="text-sm font-bold mb-3 text-gray-300">Preview Data:</h3>
                 <table className="w-full text-sm">
                   <thead>
@@ -746,14 +842,14 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
-              <p className="text-xs text-yellow-300 mb-2">
-                ⚠️ <strong>Important:</strong> This will update referral counts based on Shopify data.
-              </p>
-              <p className="text-xs text-yellow-200">
-                💡 <strong>Note:</strong> Points are only awarded when referred users purchase premium, not during CSV upload.
-              </p>
-            </div>              <div className="flex gap-3">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                <p className="text-xs text-yellow-300 mb-2">
+                  ⚠️ <strong>Important:</strong> This will update referral counts based on Shopify data.
+                </p>
+                <p className="text-xs text-yellow-200">
+                  💡 <strong>Note:</strong> Points are only awarded when referred users purchase premium, not during CSV upload.
+                </p>
+              </div>              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowUploadModal(false);
@@ -832,7 +928,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>
             <textarea
@@ -843,7 +939,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Product Link</label>
             <input
@@ -854,7 +950,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Product Thumbnail URL (optional)</label>
             <input
@@ -866,16 +962,16 @@ const TaskModal = ({ onClose, onSuccess }) => {
             />
             {formData.productThumbnail && (
               <div className="mt-2">
-                <img 
-                  src={formData.productThumbnail} 
-                  alt="Preview" 
+                <img
+                  src={formData.productThumbnail}
+                  alt="Preview"
                   className="w-full h-32 object-cover rounded-lg"
                   onError={(e) => e.target.style.display = 'none'}
                 />
               </div>
             )}
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">
               Message Template (use {`{{CODE}}`} for unique code)
@@ -892,7 +988,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
               💡 The product link and thumbnail will be automatically included when copied
             </p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Points Reward</label>
             <input
@@ -919,7 +1015,7 @@ const TaskModal = ({ onClose, onSuccess }) => {
               </p>
             </label>
           </div>
-          
+
           <div className="flex gap-3">
             <button type="submit" className="btn-primary flex-1">
               Create Task
@@ -955,7 +1051,7 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
       >
         <h2 className="text-2xl font-bold mb-4">Edit Ambassador Stats</h2>
         <p className="text-gray-300 mb-4">{ambassador.name}</p>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">Referral Count</label>
@@ -968,7 +1064,7 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Credit Points</label>
             <input
@@ -983,7 +1079,7 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
 
           <div className="border-t border-gray-600 pt-4">
             <h3 className="text-lg font-semibold mb-3 text-purple-400">Premium Status</h3>
-            
+
             <div className="flex items-center gap-3 p-3 bg-purple-500/10 rounded-lg border border-purple-500/30 mb-3">
               <input
                 type="checkbox"
@@ -1007,11 +1103,10 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
                   <button
                     type="button"
                     onClick={() => setPremiumType('monthly')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      premiumType === 'monthly'
-                        ? 'border-primary-500 bg-primary-500/20 text-primary-400'
-                        : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
-                    }`}
+                    className={`p-3 rounded-lg border-2 transition-all ${premiumType === 'monthly'
+                      ? 'border-primary-500 bg-primary-500/20 text-primary-400'
+                      : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                      }`}
                   >
                     <div className="text-sm font-bold">Monthly</div>
                     <div className="text-xs">1 Month</div>
@@ -1019,11 +1114,10 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
                   <button
                     type="button"
                     onClick={() => setPremiumType('lifetime')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      premiumType === 'lifetime'
-                        ? 'border-purple-500 bg-purple-500/20 text-purple-400'
-                        : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
-                    }`}
+                    className={`p-3 rounded-lg border-2 transition-all ${premiumType === 'lifetime'
+                      ? 'border-purple-500 bg-purple-500/20 text-purple-400'
+                      : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                      }`}
                   >
                     <div className="text-sm font-bold">Lifetime</div>
                     <div className="text-xs">Forever</div>
@@ -1032,7 +1126,7 @@ const EditAmbassadorModal = ({ ambassador, onClose, onUpdate }) => {
               </div>
             )}
           </div>
-          
+
           <div className="flex gap-3">
             <button type="submit" className="btn-primary flex-1">
               Update Ambassador
@@ -1090,7 +1184,7 @@ const EditTaskModal = ({ task, onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Description</label>
             <textarea
@@ -1101,7 +1195,7 @@ const EditTaskModal = ({ task, onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Product Link</label>
             <input
@@ -1112,7 +1206,7 @@ const EditTaskModal = ({ task, onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Product Thumbnail URL (optional)</label>
             <input
@@ -1124,16 +1218,16 @@ const EditTaskModal = ({ task, onClose, onSuccess }) => {
             />
             {formData.productThumbnail && (
               <div className="mt-2">
-                <img 
-                  src={formData.productThumbnail} 
-                  alt="Preview" 
+                <img
+                  src={formData.productThumbnail}
+                  alt="Preview"
                   className="w-full h-32 object-cover rounded-lg"
                   onError={(e) => e.target.style.display = 'none'}
                 />
               </div>
             )}
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">
               Message Template (use {`{{CODE}}`} for unique code)
@@ -1146,7 +1240,7 @@ const EditTaskModal = ({ task, onClose, onSuccess }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">Points Reward</label>
             <input
@@ -1186,7 +1280,7 @@ const EditTaskModal = ({ task, onClose, onSuccess }) => {
               </p>
             </label>
           </div>
-          
+
           <div className="flex gap-3">
             <button type="submit" className="btn-primary flex-1">
               Update Task

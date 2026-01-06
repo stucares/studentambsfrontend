@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../utils/api';
+import { sanitizeFormData } from '../utils/sanitizer';
 
 const AuthContext = createContext();
 
@@ -21,9 +22,9 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     const type = localStorage.getItem('userType');
     const isDemoMode = localStorage.getItem('demoMode') === 'true';
-    
+
     console.log('AuthContext initializing...', { token: token?.substring(0, 20), type, isDemoMode });
-    
+
     if (isDemoMode) {
       // Load demo user
       console.log('Loading demo user...');
@@ -58,10 +59,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const endpoint = type === 'admin' ? '/admin/dashboard/stats' : '/ambassador/profile';
       console.log('Fetching profile from:', endpoint);
-      
+
       const response = await api.get(endpoint);
       console.log('Profile response:', response.data);
-      
+
       if (type === 'admin') {
         setUser({ type: 'admin', ...response.data });
       } else {
@@ -73,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Failed to fetch profile:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
+
       // Don't logout on profile fetch failure, just stop loading
       // The user is still authenticated with a valid token
       setLoading(false);
@@ -107,51 +108,60 @@ export const AuthProvider = ({ children }) => {
     try {
       const endpoint = isAdmin ? '/auth/admin/login' : '/auth/login';
       console.log('Login attempt:', { endpoint, email, isAdmin });
-      
+
       const response = await api.post(endpoint, { email, password });
       console.log('Login response:', response.data);
-      
+
       const { token } = response.data;
       const userData = response.data.ambassador || response.data.admin;
       const type = isAdmin ? 'admin' : 'ambassador';
-      
+
       console.log('Storing token and user type:', { token: token.substring(0, 20) + '...', type });
-      
+
       localStorage.setItem('token', token);
       localStorage.setItem('userType', type);
-      
+
       setUserType(type);
       setUser(userData);
-      
+
       console.log('Login successful, user set:', userData);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        message: error.userMessage || 'Invalid email or password. Please try again.'
       };
     }
   };
 
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/register', userData);
-      
+      // Sanitize user data before sending
+      const sanitizedData = sanitizeFormData(userData, {
+        email: 'email',
+        name: 'name',
+        collegeName: 'name',
+        phoneNumber: 'phone',
+        age: 'number'
+      });
+
+      const response = await api.post('/auth/register', sanitizedData);
+
       const { token, ambassador } = response.data;
-      
+
       localStorage.setItem('token', token);
       localStorage.setItem('userType', 'ambassador');
-      
+
       setUserType('ambassador');
       setUser(ambassador);
-      
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
+      return {
+        success: false,
+        message: error.userMessage || 'Unable to complete registration. Please try again.'
       };
     }
   };

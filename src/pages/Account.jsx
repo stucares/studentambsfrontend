@@ -20,18 +20,22 @@ const Account = () => {
   const [uploadingCustom, setUploadingCustom] = useState(false);
 
   const avatarOptions = [
-    { id: 1, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4' },
-    { id: 2, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sam&backgroundColor=c0aede' },
-    { id: 3, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan&backgroundColor=ffd5dc' },
-    { id: 4, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Taylor&backgroundColor=d1f4e0' },
-    { id: 5, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan&backgroundColor=ffe8cc' },
-    { id: 6, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey&backgroundColor=ffeaa7' },
-    { id: 7, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riley&backgroundColor=fab1a0' },
-    { id: 8, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jamie&backgroundColor=74b9ff' },
-    { id: 9, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dakota&backgroundColor=a29bfe' },
-    { id: 10, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Avery&backgroundColor=fd79a8' },
-    { id: 11, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Parker&backgroundColor=81ecec' },
-    { id: 12, url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Quinn&backgroundColor=55efc4' },
+    { id: 1, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Alex&backgroundColor=b6e3f4' },
+    { id: 2, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Sam&backgroundColor=c0aede' },
+    { id: 3, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Jordan&backgroundColor=ffd5dc' },
+    { id: 4, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Taylor&backgroundColor=d1f4e0' },
+    { id: 5, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Morgan&backgroundColor=ffe8cc' },
+    { id: 6, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Casey&backgroundColor=ffeaa7' },
+    { id: 7, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Riley&backgroundColor=fab1a0' },
+    { id: 8, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Jamie&backgroundColor=74b9ff' },
+    { id: 9, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Dakota&backgroundColor=a29bfe' },
+    { id: 10, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Avery&backgroundColor=fd79a8' },
+    { id: 11, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Parker&backgroundColor=81ecec' },
+    { id: 12, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Quinn&backgroundColor=55efc4' },
+    { id: 13, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=River&backgroundColor=ff9ff3' },
+    { id: 14, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Skyler&backgroundColor=feca57' },
+    { id: 15, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Jaden&backgroundColor=54a0ff' },
+    { id: 16, url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Sage&backgroundColor=5f27cd' },
   ];
 
   useEffect(() => {
@@ -58,7 +62,7 @@ const Account = () => {
       setStats(statsRes.data.stats);
       setLoading(false);
     } catch (error) {
-      toast.error('Failed to load profile');
+      toast.error(error.userMessage || 'Unable to load profile. Please refresh the page.');
       setLoading(false);
     }
   };
@@ -79,7 +83,7 @@ const Account = () => {
       setCustomImagePreview(null);
       setSelectedAvatar(null);
     } catch (error) {
-      toast.error('Failed to update profile picture');
+      toast.error(error.userMessage || 'Unable to update profile picture. Please try again.');
     } finally {
       setUpdatingAvatar(false);
     }
@@ -103,7 +107,7 @@ const Account = () => {
 
     setUploadingCustom(true);
     const reader = new FileReader();
-    
+
     reader.onloadend = () => {
       setCustomImagePreview(reader.result);
       setSelectedAvatar(null); // Deselect avatar if custom image is uploaded
@@ -143,13 +147,13 @@ const Account = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md mx-auto"
+            className="w-full max-w-lg mx-auto"
           >
             {/* Single Blue Card with Modern Design */}
-            <div className="relative w-full aspect-[9/16] sm:aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl">
+            <div className="relative w-full aspect-[9/17] sm:aspect-[5/7] rounded-3xl overflow-hidden shadow-2xl">
               {/* Blue gradient background */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400"></div>
-              
+
               {/* Pattern overlay */}
               <div className="absolute inset-0 opacity-5">
                 <div className="absolute inset-0" style={{
@@ -159,7 +163,7 @@ const Account = () => {
               </div>
 
               {/* Content */}
-              <div className="relative h-full p-6 sm:p-8 flex flex-col">
+              <div className="relative h-full p-7 sm:p-10 flex flex-col">
                 {/* Header with logos */}
                 <div className="flex items-center justify-center mb-6">
                   <div className="bg-white/95 px-4 py-2 rounded-lg shadow-md flex items-center gap-3">
@@ -173,8 +177,8 @@ const Account = () => {
                 <div className="flex justify-center mb-6">
                   <div className="relative group">
                     <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-white/30 overflow-hidden bg-white shadow-2xl">
-                      <img 
-                        src={profile.avatar} 
+                      <img
+                        src={profile.avatar}
                         alt={profile.name}
                         className="w-full h-full object-cover"
                       />
@@ -218,7 +222,7 @@ const Account = () => {
                       <p className="text-white text-sm font-semibold">{profile.phoneNumber}</p>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-white/60 text-xs uppercase tracking-wider mb-1">Email</p>
@@ -367,7 +371,7 @@ const Account = () => {
                       <BadgeCheck className="w-5 h-5 text-primary-500" />
                     </div>
                     <p className="text-sm text-gray-600">
-                      {profile.premiumExpiresAt 
+                      {profile.premiumExpiresAt
                         ? `Valid until ${new Date(profile.premiumExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
                         : 'All premium benefits unlocked'}
                     </p>
@@ -518,11 +522,10 @@ const Account = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedAvatar(avatar.url)}
-                  className={`cursor-pointer rounded-xl p-2 transition-all ${
-                    selectedAvatar === avatar.url
-                      ? 'bg-gradient-to-br from-primary-500 to-accent-500 shadow-lg'
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
+                  className={`cursor-pointer rounded-xl p-2 transition-all ${selectedAvatar === avatar.url
+                    ? 'bg-gradient-to-br from-primary-500 to-accent-500 shadow-lg'
+                    : 'bg-white/5 hover:bg-white/10'
+                    }`}
                 >
                   <div className="aspect-square rounded-lg overflow-hidden bg-white">
                     <img

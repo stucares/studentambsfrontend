@@ -1,32 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/fav.png" />
-    <link rel="shortcut icon" type="image/png" href="/fav.png" />
-    <link rel="apple-touch-icon" href="/fav.png" />
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stucare Ambassador Portal</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Join Stucare Ambassador Program - Earn rewards, share courses, and grow your network" />
-    <meta name="keywords" content="Stucare, Ambassador, Student Program, Earn Money, Referral" />
-    
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Stucare Ambassador Portal" />
-    <meta property="og:description" content="Join Stucare Ambassador Program - Earn rewards, share courses, and grow your network" />
-    <meta property="og:image" content="/fav.png" />
-    
-    <!-- Calendly widget -->
-    <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
-    <script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/fav.png" />
+  <link rel="shortcut icon" type="image/png" href="/fav.png" />
+  <link rel="apple-touch-icon" href="/fav.png" />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Stucare" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stucare Ambassador – Student‑First Promotion & Rewards Platform</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description"
+    content="Join the Stucare Ambassador program to earn points for real promotional tasks. Free or optional premium membership available. No guaranteed income." />
+  <meta name="keywords"
+    content="Stucare, Scholare, student ambassador, promotional tasks, rewards program, points system, premium membership" />
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Stucare Ambassador – Student‑First Promotion & Rewards Platform" />
+  <meta property="og:description"
+    content="Join the Stucare Ambassador program to earn points for real promotional tasks. Free or optional premium membership available. No guaranteed income." />
+  <meta property="og:image" content="/fav.png" />
+
+  <!-- Calendly widget -->
+  <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+  <script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Stucare Ambassador Program",
+      "description": "Join the Stucare Ambassador program to earn points for real promotional tasks. Free or optional premium membership available.",
+      "url": "https://stucareambassador.com",
+      "potentialAction": {
+        "@type": "RegisterAction",
+        "target": "https://stucareambassador.com/register",
+        "name": "Join Now"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "Stucare",
+        "url": "https://stucare.com"
+      }
+    }
+  </script>
+  <script>
+    // Capture PWA install prompt immediately
+    window.globalDeferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.globalDeferredPrompt = e;
+      console.log('PWA Prompt captured globally');
+    });
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered'))
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+  </script>
+</body>
+
 </html>

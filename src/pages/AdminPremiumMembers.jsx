@@ -10,6 +10,7 @@ const AdminPremiumMembers = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, active, expired
+  const [actionLoading, setActionLoading] = useState({});
 
   useEffect(() => {
     fetchPremiumMembers();
@@ -26,7 +27,7 @@ const AdminPremiumMembers = () => {
       setFilteredMembers(response.data.members);
       setLoading(false);
     } catch (error) {
-      toast.error('Failed to load premium members');
+      toast.error(error.userMessage || 'Unable to load premium members. Please refresh the page.');
       setLoading(false);
     }
   };
@@ -36,7 +37,7 @@ const AdminPremiumMembers = () => {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(m => 
+      filtered = filtered.filter(m =>
         m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.collegeName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -56,26 +57,41 @@ const AdminPremiumMembers = () => {
   const handleRevokePremium = async (ambassadorId) => {
     if (!confirm('Are you sure you want to revoke premium access?')) return;
 
+    setActionLoading(prev => ({ ...prev, [`${ambassadorId}-revoke`]: true }));
     try {
       await api.put(`/admin/premium/members/${ambassadorId}/revoke`);
       toast.success('Premium access revoked');
       fetchPremiumMembers();
     } catch (error) {
-      toast.error('Failed to revoke premium');
+      toast.error(error.userMessage || 'Unable to revoke premium access. Please try again.');
+    } finally {
+      setActionLoading(prev => {
+        const newState = { ...prev };
+        delete newState[`${ambassadorId}-revoke`];
+        return newState;
+      });
     }
   };
 
   const handleExtendPremium = async (ambassadorId, months) => {
+    setActionLoading(prev => ({ ...prev, [`${ambassadorId}-extend`]: true }));
     try {
       await api.put(`/admin/premium/members/${ambassadorId}/extend`, { months });
       toast.success(`Premium extended by ${months} month(s)`);
       fetchPremiumMembers();
     } catch (error) {
-      toast.error('Failed to extend premium');
+      toast.error(error.userMessage || 'Unable to extend premium. Please try again.');
+    } finally {
+      setActionLoading(prev => {
+        const newState = { ...prev };
+        delete newState[`${ambassadorId}-extend`];
+        return newState;
+      });
     }
   };
 
   const handleUpdateMeeting = async (ambassadorId, meetingDate, meetingLink) => {
+    setActionLoading(prev => ({ ...prev, [`${ambassadorId}-meeting`]: true }));
     try {
       await api.put(`/admin/premium/members/${ambassadorId}/meeting`, {
         meetingDate,
@@ -85,7 +101,13 @@ const AdminPremiumMembers = () => {
       toast.success('Meeting details updated');
       fetchPremiumMembers();
     } catch (error) {
-      toast.error('Failed to update meeting');
+      toast.error(error.userMessage || 'Unable to update meeting details. Please try again.');
+    } finally {
+      setActionLoading(prev => {
+        const newState = { ...prev };
+        delete newState[`${ambassadorId}-meeting`];
+        return newState;
+      });
     }
   };
 
@@ -230,6 +252,7 @@ const AdminPremiumMembers = () => {
                 onRevoke={handleRevokePremium}
                 onExtend={handleExtendPremium}
                 onUpdateMeeting={handleUpdateMeeting}
+                actionLoading={actionLoading}
               />
             ))
           )}
@@ -239,7 +262,7 @@ const AdminPremiumMembers = () => {
   );
 };
 
-const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting }) => {
+const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting, actionLoading }) => {
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [meetingDate, setMeetingDate] = useState(member.meetingDate || '');
   const [meetingLink, setMeetingLink] = useState(member.meetingLink || '');
@@ -269,7 +292,7 @@ const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting }) => {
               <p className="text-sm text-gray-600">{member.email}</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mt-3">
             <div>
               <p className="text-gray-500">College</p>
@@ -281,9 +304,8 @@ const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting }) => {
             </div>
             <div>
               <p className="text-gray-500">Status</p>
-              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
+              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
                 {isActive ? `Active (${daysLeft} days left)` : 'Expired'}
               </span>
             </div>
@@ -318,9 +340,10 @@ const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting }) => {
         <div className="flex flex-col gap-2 md:min-w-[200px]">
           <button
             onClick={() => onExtend(member.id, 1)}
-            className="btn-secondary text-sm"
+            disabled={actionLoading[`${member.id}-extend`]}
+            className="btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Extend +1 Month
+            {actionLoading[`${member.id}-extend`] ? 'Extending...' : 'Extend +1 Month'}
           </button>
           <button
             onClick={() => setShowMeetingForm(!showMeetingForm)}
@@ -331,9 +354,10 @@ const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting }) => {
           {isActive && (
             <button
               onClick={() => onRevoke(member.id)}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+              disabled={actionLoading[`${member.id}-revoke`]}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Revoke Premium
+              {actionLoading[`${member.id}-revoke`] ? 'Revoking...' : 'Revoke Premium'}
             </button>
           )}
         </div>
@@ -371,9 +395,10 @@ const MemberCard = ({ member, onRevoke, onExtend, onUpdateMeeting }) => {
                 onUpdateMeeting(member.id, meetingDate, meetingLink);
                 setShowMeetingForm(false);
               }}
-              className="btn-primary w-full"
+              disabled={actionLoading[`${member.id}-meeting`]}
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Update Meeting
+              {actionLoading[`${member.id}-meeting`] ? 'Updating...' : 'Update Meeting'}
             </button>
           </div>
         </div>

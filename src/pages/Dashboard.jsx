@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Target, Award, Copy, Check, Lock, AlertCircle, MessageCircle } from 'lucide-react';
 import api from '../utils/api';
@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [copiedTask, setCopiedTask] = useState(null);
   const [codeApproved, setCodeApproved] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState(null);
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
     // Fetch WhatsApp link from popup settings
@@ -39,7 +40,7 @@ const Dashboard = () => {
         activeTasks: 3,
         uniqueCode: ambassadorCode
       });
-      
+
       // Replace {{CODE}} placeholder with actual ambassador code
       setTasks([
         {
@@ -89,23 +90,24 @@ const Dashboard = () => {
       const ambassadorCode = profileRes.data.ambassador.uniqueCode;
       const isApproved = profileRes.data.ambassador.uniqueCodeApproved;
       setCodeApproved(isApproved);
-      setStats({...statsRes.data.stats, uniqueCode: ambassadorCode});
-      
+      setStats({ ...statsRes.data.stats, uniqueCode: ambassadorCode });
+
       // Replace {{CODE}} placeholder in all task messages
       const tasksWithCode = tasksRes.data.tasks.map(task => ({
         ...task,
         messageTemplate: task.messageTemplate.replace(/\{\{CODE\}\}/gi, ambassadorCode || 'PENDING')
       }));
-      
+
       setTasks(tasksWithCode);
       setLoading(false);
-      
+
       // Show warning if code not approved
-      if (!isApproved) {
+      if (!isApproved && !toastShownRef.current) {
         toast('⏳ Your tasks are locked until admin approves your unique code', {
           duration: 5000,
           icon: '🔒'
         });
+        toastShownRef.current = true;
       }
     } catch (error) {
       toast.error('Failed to load dashboard data');
@@ -292,7 +294,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
               </span>
             )}
           </div>
-          
+
           {/* Lock Message */}
           {!codeApproved && (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
@@ -310,7 +312,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
               </div>
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tasks.map((task, index) => (
               <motion.div
@@ -329,7 +331,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xl font-bold">{task.title}</h3>
@@ -349,8 +351,8 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                 {/* Product Thumbnail */}
                 {task.productThumbnail && (
                   <div className="mb-4 rounded-lg overflow-hidden">
-                    <img 
-                      src={task.productThumbnail} 
+                    <img
+                      src={task.productThumbnail}
                       alt={task.title}
                       className="w-full h-40 object-cover"
                       onError={(e) => {
@@ -361,7 +363,7 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
                 )}
 
                 <p className="text-gray-600 mb-4">{task.description}</p>
-                
+
                 <div className="bg-white/5 rounded-lg p-3 mb-4">
                   <p className="text-sm text-gray-400 mb-1">Share this message:</p>
                   <p className="text-sm font-mono whitespace-pre-wrap">{task.messageTemplate}</p>

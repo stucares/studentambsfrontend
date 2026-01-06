@@ -10,6 +10,7 @@ import ScrollToTop from './components/ScrollToTop';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
 import Earnings from './pages/Earnings';
@@ -59,16 +60,17 @@ function App() {
             },
           }}
         />
-        
+
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
-          
+
           {/* Premium/Payment Routes */}
           <Route
             path="/premium-upgrade"
@@ -102,7 +104,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          
+
           {/* Ambassador Routes */}
           <Route
             path="/dashboard"
@@ -134,7 +136,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          
+
           {/* Admin Routes */}
           <Route
             path="/admin"
@@ -176,7 +178,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          
+
           {/* Default Route */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
