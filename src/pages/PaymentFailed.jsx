@@ -38,10 +38,10 @@ const PaymentFailed = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-card p-8 mb-6"
+          className="glass-card p-6 md:p-8 mb-6"
         >
           <h2 className="text-lg font-semibold text-gray-900 mb-4">What can you do?</h2>
-          
+
           <ul className="space-y-4 mb-6">
             <li className="flex items-start gap-3">
               <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -83,7 +83,7 @@ const PaymentFailed = () => {
             <RefreshCw className="w-5 h-5" />
             Try Again
           </button>
-          
+
           <button
             onClick={() => navigate('/dashboard')}
             className="w-full py-3 border-2 border-gray-200 rounded-xl text-gray-700 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
@@ -91,7 +91,7 @@ const PaymentFailed = () => {
             <ArrowLeft className="w-5 h-5" />
             Go to Dashboard
           </button>
-          
+
           <a
             href="mailto:support@stucares.com"
             className="w-full py-3 text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"

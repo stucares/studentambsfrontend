@@ -92,7 +92,7 @@ const MeetingScheduled = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-card p-8 mb-6"
+          className="glass-card p-6 md:p-8 mb-6"
         >
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center">

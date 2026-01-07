@@ -20,18 +20,18 @@ const PaymentSuccess = () => {
       // Prevent multiple verification calls
       if (hasVerified.current) return;
       hasVerified.current = true;
-      
+
       try {
         const orderId = searchParams.get('order_id');
         const devMode = searchParams.get('dev_mode') === 'true';
-        
+
         // Validate order ID format
         if (!orderId) {
           toast.error('Invalid payment reference');
           setTimeout(() => navigate('/dashboard'), 1000);
           return;
         }
-        
+
         // Additional validation: order_id should start with 'order_' or 'dev_session_'
         if (!orderId.startsWith('order_') && !orderId.startsWith('dev_session_')) {
           toast.error('Invalid order ID format');
@@ -41,7 +41,7 @@ const PaymentSuccess = () => {
 
         console.log('Verifying payment for order:', orderId);
         const response = await api.post('/payment/verify', { orderId, devMode });
-        
+
         if (response.data.success) {
           setVerified(true);
           setMeetingData(response.data.meeting);
@@ -53,11 +53,11 @@ const PaymentSuccess = () => {
         }
       } catch (error) {
         console.error('Verification error:', error);
-        
+
         // Show appropriate error message
         const errorMsg = error.response?.data?.message || 'Failed to verify payment';
         toast.error(errorMsg);
-        
+
         // Redirect based on error type
         if (error.response?.status === 404) {
           // Order not found
@@ -66,7 +66,7 @@ const PaymentSuccess = () => {
           // Payment not completed
           toast.error('Payment was not completed. Please complete the payment.');
         }
-        
+
         // Always redirect to premium upgrade page on error
         setTimeout(() => {
           navigate('/premium-upgrade');
@@ -130,7 +130,7 @@ const PaymentSuccess = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-card p-8 mb-6"
+          className="glass-card p-6 md:p-8 mb-6"
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
@@ -152,7 +152,7 @@ const PaymentSuccess = () => {
                 <p className="text-sm text-primary-600">Pick a time that works for you</p>
               </div>
             </div>
-            
+
             <p className="text-primary-700 mb-4 text-sm">
               Book your 30-minute personal onboarding session with our team. Choose from available time slots that fit your schedule.
             </p>
@@ -205,7 +205,7 @@ const PaymentSuccess = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass-card p-8 mb-6"
+          className="glass-card p-6 md:p-8 mb-6"
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-lime-100 rounded-xl flex items-center justify-center">
@@ -225,9 +225,8 @@ const PaymentSuccess = () => {
               { text: 'Complete your first task to get ₹19 cashback', done: false },
             ].map((item, index) => (
               <li key={index} className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  item.done ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.done ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                  }`}>
                   {item.done ? <CheckCircle className="w-4 h-4" /> : <span className="text-sm">{index + 1}</span>}
                 </div>
                 <span className={item.done ? 'text-gray-900' : 'text-gray-600'}>{item.text}</span>

@@ -187,7 +187,7 @@ const Login = () => {
             className="mb-4 flex items-center justify-center gap-3"
           >
             <img
-              src="/StuCare's TM.png"
+              src="/stucare_logo.png"
               alt="Stucare"
               className="h-10 w-auto"
             />

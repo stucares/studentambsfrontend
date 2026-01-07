@@ -123,12 +123,12 @@ const AdminPremiumSettings = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-4 mb-6 border-b-2 border-gray-200">
+        <div className="flex gap-4 mb-6 border-b-2 border-gray-200 overflow-x-auto pb-1">
           <button
             onClick={() => setActiveTab('premium')}
             className={`px-6 py-3 font-semibold transition-all ${activeTab === 'premium'
-                ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             <div className="flex items-center gap-2">
@@ -139,8 +139,8 @@ const AdminPremiumSettings = () => {
           <button
             onClick={() => setActiveTab('referral')}
             className={`px-6 py-3 font-semibold transition-all ${activeTab === 'referral'
-                ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             <div className="flex items-center gap-2">
@@ -151,8 +151,8 @@ const AdminPremiumSettings = () => {
           <button
             onClick={() => setActiveTab('popup')}
             className={`px-6 py-3 font-semibold transition-all ${activeTab === 'popup'
-                ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'text-primary-600 border-b-4 border-primary-600 -mb-0.5'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             <div className="flex items-center gap-2">

@@ -319,7 +319,7 @@ const LandingPage = () => {
               <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="h-14 sm:h-20 w-14 sm:w-20 flex items-center justify-center flex-shrink-0">
                   <img
-                    src="StuCare's TM.png"
+                    src="/stucare_logo.png"
                     alt="Stucare"
                     className="max-h-full max-w-full w-auto object-contain"
                   />
@@ -585,7 +585,7 @@ const LandingPage = () => {
             <div>
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <img
-                  src="StuCare's TM.png"
+                  src="/stucare_logo.png"
                   alt="Stucare"
                   className="h-6 sm:h-8 object-contain brightness-100 bg-white rounded-md"
                 />

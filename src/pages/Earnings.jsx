@@ -98,7 +98,7 @@ const Earnings = () => {
     const Icon = badge.icon;
 
     return (
-      <span className={`inline - flex items - center gap - 1 px - 3 py - 1 rounded - full text - sm font - medium ${badge.color} `}>
+      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${badge.color}`}>
         <Icon className="w-4 h-4" />
         {badge.text}
       </span>

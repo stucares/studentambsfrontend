@@ -155,7 +155,7 @@ const AdminWithdrawals = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {['all', 'pending', 'processing', 'completed', 'rejected'].map((status) => (
             <button
               key={status}

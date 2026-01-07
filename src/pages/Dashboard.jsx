@@ -261,18 +261,43 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
           className="glass-card p-6 mb-8"
         >
           <h3 className="text-xl font-bold mb-4">Your Unique Referral Code</h3>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="flex-1 bg-white/5 rounded-xl p-4 border-2 border-dashed border-primary-500">
               <p className="text-3xl font-mono font-bold text-center gradient-text">
                 {stats.uniqueCode}
               </p>
             </div>
-            <button
-              onClick={() => copyToClipboard(stats.uniqueCode)}
-              className="btn-secondary"
-            >
-              <Copy className="w-5 h-5" />
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  const success = await copyToClipboard(stats.uniqueCode);
+                  if (success) {
+                    toast.success('Code copied!');
+                  } else {
+                    toast.error('Failed to copy');
+                  }
+                }}
+                className="btn-secondary flex items-center gap-2"
+                title="Copy Code"
+              >
+                <Copy className="w-5 h-5" />
+                <span className="hidden sm:inline">Copy</span>
+              </button>
+              <button
+                onClick={() => {
+                  const registrationUrl = `${window.location.origin}/register?ref=${stats.uniqueCode}`;
+                  const message = `🎉 Join me as a Stucare Ambassador and earn rewards!\n\nUse my referral code: *${stats.uniqueCode}*\n\n👉 Register here: ${registrationUrl}\n\nStart earning points today! 🚀`;
+                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                  window.open(whatsappUrl, '_blank');
+                  toast.success('Opening WhatsApp...');
+                }}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2"
+                title="Share on WhatsApp"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+            </div>
           </div>
           <p className="text-sm text-gray-400 mt-2">
             This code is automatically included in all your task messages
@@ -283,7 +308,6 @@ ${task.productThumbnail ? `\n📸 Preview: ${task.productThumbnail}` : ''}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Available Tasks</h2>

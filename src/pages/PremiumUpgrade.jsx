@@ -211,7 +211,7 @@ const PremiumUpgrade = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass-card p-8 relative overflow-hidden"
+          className="glass-card p-6 md:p-8 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 bg-gradient-to-l from-lime-400 to-lime-500 text-black px-6 py-2 text-sm font-bold rounded-bl-xl">
             90% OFF

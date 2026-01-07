@@ -5,7 +5,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { getLevelInfo } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
-import { BadgeCheck, Star, Crown, Sparkles, ArrowRight, Copy, AlertCircle, Camera, X, Upload } from 'lucide-react';
+import { BadgeCheck, Star, Crown, Sparkles, ArrowRight, Copy, AlertCircle, Camera, X, Upload, MessageCircle } from 'lucide-react';
 
 const Account = () => {
   const navigate = useNavigate();
@@ -167,7 +167,7 @@ const Account = () => {
                 {/* Header with logos */}
                 <div className="flex items-center justify-center mb-6">
                   <div className="bg-white/95 px-4 py-2 rounded-lg shadow-md flex items-center gap-3">
-                    <img src="/StuCare's TM.png" alt="Stucare" className="h-8 w-auto" />
+                    <img src="/stucare_logo.png" alt="Stucare" className="h-8 w-auto" />
                     <p className="text-xl font-bold text-gray-400">×</p>
                     <img src="/3048_Scholare_HK-JPG-01__1_-removebg-preview.png" alt="Scholare" className="h-8 w-auto" />
                   </div>
@@ -249,9 +249,31 @@ const Account = () => {
                       </div>
                       {profile.uniqueCodeApproved && (
                         <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(profile.uniqueCode);
-                            toast.success('Code copied to clipboard!');
+                          onClick={async () => {
+                            try {
+                              if (navigator.clipboard && window.isSecureContext) {
+                                await navigator.clipboard.writeText(profile.uniqueCode);
+                                toast.success('Code copied to clipboard!');
+                              } else {
+                                const textArea = document.createElement('textarea');
+                                textArea.value = profile.uniqueCode;
+                                textArea.style.position = 'fixed';
+                                textArea.style.left = '-999999px';
+                                document.body.appendChild(textArea);
+                                textArea.focus();
+                                textArea.select();
+                                try {
+                                  document.execCommand('copy');
+                                  toast.success('Code copied to clipboard!');
+                                } catch (err) {
+                                  toast.error('Failed to copy. Please copy manually.');
+                                }
+                                document.body.removeChild(textArea);
+                              }
+                            } catch (err) {
+                              console.error('Copy failed:', err);
+                              toast.error('Failed to copy. Please copy manually.');
+                            }
                           }}
                           className="mt-4 p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                           title="Copy to clipboard"
@@ -276,7 +298,7 @@ const Account = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-3 gap-4 max-w-md mx-auto w-full"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-md mx-auto w-full"
           >
             <div className="glass-card p-4 text-center">
               <p className="text-3xl font-bold gradient-text mb-1">{stats.referralCount}</p>
@@ -335,15 +357,55 @@ const Account = () => {
                     <p className="text-xs text-gray-500 mb-1">Share this code</p>
                     <p className="text-2xl font-bold text-purple-600 font-mono">{profile.uniqueCode}</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(profile.uniqueCode);
-                      toast.success('Referral code copied!');
-                    }}
-                    className="p-3 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
-                  >
-                    <Copy className="h-5 w-5 text-purple-600" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Modern clipboard API
+                          if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(profile.uniqueCode);
+                            toast.success('Referral code copied!');
+                          } else {
+                            // Fallback for older browsers or non-HTTPS
+                            const textArea = document.createElement('textarea');
+                            textArea.value = profile.uniqueCode;
+                            textArea.style.position = 'fixed';
+                            textArea.style.left = '-999999px';
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
+                            try {
+                              document.execCommand('copy');
+                              toast.success('Referral code copied!');
+                            } catch (err) {
+                              toast.error('Failed to copy. Please copy manually.');
+                            }
+                            document.body.removeChild(textArea);
+                          }
+                        } catch (err) {
+                          console.error('Copy failed:', err);
+                          toast.error('Failed to copy. Please copy manually.');
+                        }
+                      }}
+                      className="p-3 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors"
+                      title="Copy Code"
+                    >
+                      <Copy className="h-5 w-5 text-purple-600" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const registrationUrl = `${window.location.origin}/register?ref=${profile.uniqueCode}`;
+                        const message = `🎉 Join me as a Stucare Ambassador and earn rewards!\n\nUse my referral code: *${profile.uniqueCode}*\n\n👉 Register here: ${registrationUrl}\n\nStart earning points today! 🚀`;
+                        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                        toast.success('Opening WhatsApp...');
+                      }}
+                      className="p-3 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+                      title="Share on WhatsApp"
+                    >
+                      <MessageCircle className="h-5 w-5 text-green-600" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-sm text-gray-600 text-center">
                   Share this code to refer friends and earn points! 🎉
