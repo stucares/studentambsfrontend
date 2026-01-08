@@ -298,8 +298,7 @@ const Login = () => {
         </div>
       </motion.div>
 
-      {/* WhatsApp Popup */}
-      <WhatsAppPopup trigger="login" />
+      {/* WhatsApp Popup removed */}
     </div>
   );
 };
