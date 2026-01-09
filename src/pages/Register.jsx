@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Mail, Lock, User, Phone, GraduationCap, Hash, Eye, EyeOff, Upload, X, Search } from 'lucide-react';
 import AvatarSelector from '../components/AvatarSelector';
-import WhatsAppPopup from '../components/WhatsAppPopup';
+
 import * as XLSX from 'xlsx';
 
 const Register = () => {
@@ -527,8 +527,7 @@ const Register = () => {
         </div>
       </motion.div>
 
-      {/* WhatsApp Popup */}
-      <WhatsAppPopup trigger="register" />
+
     </div>
   );
 };

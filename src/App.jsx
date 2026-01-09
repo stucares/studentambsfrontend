@@ -25,6 +25,7 @@ import AdminPremiumSettings from './pages/AdminPremiumSettings';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 import RefundPolicy from './pages/RefundPolicy';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 function App() {
   return (
@@ -70,6 +71,7 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
           {/* Premium/Payment Routes */}
           <Route

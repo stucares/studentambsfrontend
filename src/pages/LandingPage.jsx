@@ -612,6 +612,7 @@ const LandingPage = () => {
               <h4 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg">Legal & Support</h4>
               <ul className="space-y-2 text-sm sm:text-base text-gray-400">
                 <li><Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/refund-policy" className="hover:text-white transition-colors">Refund & Cancellation</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
               </ul>

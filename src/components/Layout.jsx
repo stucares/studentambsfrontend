@@ -54,8 +54,8 @@ const Layout = ({ children }) => {
 
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center gap-6">
-                            {/* Install Button */}
-                            <InstallButton iconOnly />
+                            {/* Install Button - Only show for non-admins */}
+                            {!isAdmin && <InstallButton iconOnly />}
 
                             {/* User Greeting */}
                             <span className="text-gray-600 font-medium">Hi, {user?.name?.split(' ')[0] || 'User'}</span>
@@ -119,10 +119,12 @@ const Layout = ({ children }) => {
                                     </Link>
                                 ))}
 
-                                <div className="px-4 flex items-center gap-2">
-                                    <InstallButton iconOnly />
-                                    <span className="text-sm text-gray-500">Install App</span>
-                                </div>
+                                {!isAdmin && (
+                                    <div className="px-4 flex items-center gap-2">
+                                        <InstallButton iconOnly />
+                                        <span className="text-sm text-gray-500">Install App</span>
+                                    </div>
+                                )}
 
                                 <button
                                     onClick={() => {
