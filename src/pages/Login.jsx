@@ -42,49 +42,115 @@ const Login = () => {
         return;
       }
 
+      console.log('Initializing Google Sign-In with client ID:', clientId.substring(0, 20) + '...');
+
       if (window.google && window.google.accounts) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: handleGoogleCallback,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-        console.log('GIS Initialized');
+        try {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleCallback,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+            context: 'signin',
+            ux_mode: 'popup', // Use popup mode for better cross-browser compatibility
+            itp_support: true, // Enable Intelligent Tracking Prevention support for Safari
+          });
+          console.log('✅ Google Sign-In initialized successfully');
+
+          // Render button if ref exists
+          if (googleButtonRef.current) {
+            window.google.accounts.id.renderButton(
+              googleButtonRef.current,
+              {
+                theme: 'filled_blue',
+                size: 'large',
+                width: googleButtonRef.current.offsetWidth
+              }
+            );
+          }
+        } catch (error) {
+          console.error('❌ Failed to initialize Google Sign-In:', error);
+        }
+      } else {
+        console.warn('Google Identity Services not loaded yet...');
       }
     };
 
+    // Wait for Google script to load
     if (window.google) {
       initializeGoogle();
     } else {
-      const interval = setInterval(() => {
+      console.log('Waiting for Google Identity Services to load...');
+      const checkInterval = setInterval(() => {
         if (window.google) {
+          console.log('Google Identity Services loaded!');
           initializeGoogle();
-          clearInterval(interval);
+          clearInterval(checkInterval);
         }
       }, 100);
-      return () => clearInterval(interval);
+
+      // Cleanup interval after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(checkInterval);
+        console.error('❌ Google Identity Services failed to load within 10 seconds');
+      }, 10000);
+
+      return () => {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+      };
     }
   }, []);
 
   const handleGoogleCallback = async (response) => {
-    if (response.credential) {
-      try {
-        setLoading(true);
-        const res = await api.post('/auth/google', { token: response.credential });
+    console.log('Google Sign-In callback triggered');
+    
+    if (!response) {
+      console.error('❌ No response from Google');
+      toast.error('Google Sign-In failed: No response received');
+      return;
+    }
 
-        const { token, ambassador } = res.data;
+    if (!response.credential) {
+      console.error('❌ No credential in Google response:', response);
+      toast.error('Google Sign-In failed: No credential received');
+      return;
+    }
 
-        localStorage.setItem('token', token);
-        localStorage.setItem('userType', 'ambassador');
+    try {
+      setLoading(true);
+      console.log('📤 Sending Google token to backend...');
+      
+      const res = await api.post('/auth/google', { token: response.credential });
 
-        toast.success('Login successful!');
-        window.location.href = '/dashboard';
+      console.log('✅ Backend response received:', res.data);
+      const { token, ambassador } = res.data;
 
-      } catch (error) {
-        console.error('Google Login Error:', error);
-        toast.error(error.response?.data?.message || 'Google Login Failed');
-        setLoading(false);
+      if (!token || !ambassador) {
+        throw new Error('Invalid response from server');
       }
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('userType', 'ambassador');
+
+      toast.success(`Welcome, ${ambassador.name}! 🎉`);
+      
+      // Small delay to show the toast
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
+
+    } catch (error) {
+      console.error('❌ Google Login Error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      const errorMessage = error.response?.data?.message || 'Google Sign-In failed. Please try again.';
+      toast.error(errorMessage);
+      setLoading(false);
     }
   };
 
